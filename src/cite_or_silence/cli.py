@@ -4,6 +4,7 @@ import statistics
 from pathlib import Path
 
 from cite_or_silence.chunk import chunk_entry
+from cite_or_silence import embed, evaluate, search
 from cite_or_silence.fetch import fetch_all
 from cite_or_silence import questions
 
@@ -11,6 +12,8 @@ DATA = Path("data")
 RAW = DATA / "raw"
 CHUNKS = DATA / "chunks.jsonl"
 QUESTIONS = Path("eval/questions.jsonl")
+EMBEDDINGS = DATA / "embeddings"
+DB = DATA / "sep.duckdb"
 
 
 def cmd_fetch(args) -> None:
@@ -38,6 +41,60 @@ def cmd_chunk(args) -> None:
         print(f"{len(empty)} entries without chunks: {', '.join(empty[:20])}")
 
 
+def cmd_embed(args) -> None:
+    embed.embed_all(CHUNKS, EMBEDDINGS, log=lambda m: print(m, flush=True))
+
+
+def cmd_index(args) -> None:
+    chunks = search.chunks_of(CHUNKS)
+    con = search.connect(DB)
+    search.build_index(con, chunks, embed.load_all(EMBEDDINGS))
+    print(f"{len(chunks)} chunks indexed in {DB}")
+
+
+def cmd_search(args) -> None:
+    con = search.connect(DB)
+    vector = embed.encode(embed.load_model(), [args.query])[0]
+    for chunk_id in search.search(con, args.query, vector, args.mode, args.k):
+        heading, text = con.execute("SELECT heading, text FROM chunks WHERE id = ?", [chunk_id]).fetchone()
+        print(f"{chunk_id}  [{heading}]\n    {text[:200]}...\n")
+
+
+def cmd_recall(args) -> None:
+    con = search.connect(DB)
+    sections = {
+        row[0]: evaluate.Section(*row[1:])
+        for row in con.execute("SELECT id, entry, anchor, section FROM chunks").fetchall()
+    }
+    number = {(s.entry, s.anchor): s.number for s in sections.values()}
+    asked = [q for q in questions.load(QUESTIONS) if q["gold"]]
+    vectors = embed.encode(embed.load_model(), [q["question"] for q in asked])
+    scores = {mode: [] for mode in search.MODES}
+    entry_scores = {mode: [] for mode in search.MODES}
+    misses = []
+    for q, vector in zip(asked, vectors):
+        gold = [evaluate.Section(g["entry"], g["anchor"], number[g["entry"], g["anchor"]]) for g in q["gold"]]
+        for mode in search.MODES:
+            got = [sections[i] for i in search.search(con, q["question"], vector, mode, args.k)]
+            scores[mode].append((q["type"], evaluate.recall(gold, got)))
+            entry_scores[mode].append((q["type"], evaluate.entry_recall(gold, got)))
+            if mode == "hybrid" and scores[mode][-1][1] < 1:
+                misses.append((q, got))
+    tables = {m: evaluate.by_type(scores[m]) for m in search.MODES}
+    entry_tables = {m: evaluate.by_type(entry_scores[m]) for m in search.MODES}
+    print(f"Recall@{args.k} by section (by entry in brackets); 'none' questions have no gold\n")
+    print(f"{'type':<14}{'n':>4}" + "".join(f"{m:>18}" for m in search.MODES))
+    for t in ("single", "multi", "false_premise", "all"):
+        n = tables["hybrid"][t][0]
+        cells = "".join(f"{tables[m][t][1]:>9.2f} [{entry_tables[m][t][1]:.2f}]" for m in search.MODES)
+        print(f"{t:<14}{n:>4}{cells}")
+    if args.misses:
+        print(f"\nhybrid misses ({len(misses)}):")
+        for q, got in misses:
+            want = ", ".join(f"{g['entry']}#{g['anchor']}" for g in q["gold"])
+            print(f"- {q['id']} {q['question']}\n    want {want}\n    got  {', '.join(f'{s.entry}#{s.anchor}' for s in got)}")
+
+
 def cmd_questions(args) -> None:
     if args.entry:
         print("\n".join(questions.headings(args.entry, RAW)))
@@ -55,6 +112,19 @@ def main() -> None:
     fetch.set_defaults(func=cmd_fetch)
     chunk = sub.add_parser("chunk", help="cut data/raw into data/chunks.jsonl")
     chunk.set_defaults(func=cmd_chunk)
+    emb = sub.add_parser("embed", help="embed data/chunks.jsonl into data/embeddings (resumable, hours)")
+    emb.set_defaults(func=cmd_embed)
+    idx = sub.add_parser("index", help="load chunks and embeddings into data/sep.duckdb (HNSW + BM25)")
+    idx.set_defaults(func=cmd_index)
+    se = sub.add_parser("search", help="show the top chunks for a question")
+    se.add_argument("query")
+    se.add_argument("--mode", choices=search.MODES, default="hybrid")
+    se.add_argument("-k", type=int, default=5)
+    se.set_defaults(func=cmd_search)
+    rc = sub.add_parser("recall", help="Recall@k of every search mode against eval/questions.jsonl")
+    rc.add_argument("-k", type=int, default=5)
+    rc.add_argument("--misses", action="store_true", help="list the questions hybrid search misses")
+    rc.set_defaults(func=cmd_recall)
     qs = sub.add_parser("questions", help="check eval/questions.jsonl, or list an entry's sections")
     qs.add_argument("entry", nargs="?", help="list this entry's anchors and headings")
     qs.set_defaults(func=cmd_questions)

@@ -27,6 +27,15 @@ Test fixtures use invented text that only mimics SEP markup.
   60 words merge forward, over 300 split on sentence ends; chunks never cross a section. Output:
   `data/chunks.jsonl`. A handful of chunks exceed 300 words (one sentence full of formulas).
 - Footnote markers (`<sup>[1]</sup>`) are dropped; the footnotes themselves (notes.html) are not fetched.
+- `embed`: bge-m3 (multilingual, 1,024 dims, fp16 on MPS, batch 8, max 512 tokens) over
+  "entry title — heading\ntext" of every chunk, saved as shards of 4,096 in `data/embeddings/`.
+  Resumable. ~9 chunks/s on the M4, so the full run takes hours, not minutes.
+- `index`: loads chunks + vectors into `data/sep.duckdb`: HNSW index (vss, cosine) and BM25 (fts,
+  english stemmer, over heading + text). HNSW persistence is an experimental DuckDB flag.
+- Search modes: `dense`, `bm25`, `hybrid` (top 50 of each fused with RRF, k = 60).
+- `recall`: Recall@k per question type for the three modes, by section and by entry. A chunk from
+  subsection 3.2 counts for gold section 3. `none` questions have no gold and are left out.
+  Questions are Spanish and the SEP English, so BM25 alone only helps with names and loanwords.
 
 ## Plan (v1)
 1. Fetch and chunk, checking sections come out right.
@@ -43,3 +52,7 @@ The README must say which model produced each number.
 - `uv run pytest`
 - `uv run cite-or-silence fetch [--limit N]`
 - `uv run cite-or-silence chunk`
+- `uv run cite-or-silence embed` (hours; run with `caffeinate -i`)
+- `uv run cite-or-silence index`
+- `uv run cite-or-silence search "question" [--mode dense|bm25|hybrid] [-k 5]`
+- `uv run cite-or-silence recall [-k 5] [--misses]`
