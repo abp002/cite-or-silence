@@ -79,3 +79,31 @@ def test_long_paragraph_splits_on_sentences_without_losing_text():
 def test_entry_slugs_dedupe_in_order():
     html = '<a href="entries/kant/">x</a><a href="entries/abduction/">y</a><a href="entries/kant/#2">z</a>'
     assert entry_slugs(html) == ["kant", "abduction"]
+
+
+# Regression: a third of SEP headings carry their anchor on an inner <a name>/<a id>, or none at all.
+# They used to fall back to the preamble's anchor, so citations lost their section and chunk ids collided.
+ANCHOR_FORMS = f"""
+<h1>Forms</h1>
+<div id="preamble"><p>{words(70, "intro")}</p></div>
+<div id="main-text">
+<h2><a name="pred">1. Named Anchor</a></h2><p>{words(70, "a")}</p>
+<h2><a id="inner">2. Inner Id</a></h2><p>{words(70, "b")}</p>
+<h3>2.1 No Anchor</h3><p>{words(70, "c")}</p>
+</div>
+"""
+
+
+def test_anchor_comes_from_inner_link_or_nearest_previous_section():
+    chunks = chunk_entry("forms", ANCHOR_FORMS)
+    assert [(c.section, c.url.split("/")[-1]) for c in chunks] == [
+        (None, ""),
+        ("1", "#pred"),
+        ("2", "#inner"),
+        ("2.1", "#inner"),
+    ]
+
+
+def test_chunk_ids_are_unique_even_when_sections_share_an_anchor():
+    ids = [c.id for c in chunk_entry("forms", ANCHOR_FORMS)]
+    assert len(ids) == len(set(ids))

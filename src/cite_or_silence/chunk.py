@@ -65,6 +65,14 @@ def _blocks(container: Tag):
         yield el
 
 
+def heading_anchor(el: Tag) -> str | None:
+    """SEP headings carry their anchor as <h2 id>, <h2><a name></h2> or <h2><a id></h2>."""
+    if el.get("id"):
+        return el["id"]
+    link = el.find("a", attrs={"name": True}) or el.find("a", attrs={"id": True})
+    return (link.get("name") or link.get("id")) if link else None
+
+
 def parse_entry(html: str) -> tuple[str, list[Section]]:
     soup = BeautifulSoup(html, "lxml")
     for sup in soup.find_all("sup"):
@@ -84,7 +92,9 @@ def parse_entry(html: str) -> tuple[str, list[Section]]:
         for el in _blocks(main):
             if el.name in HEADINGS:
                 number, heading = split_heading(el.get_text(" "))
-                current = Section(el.get("id"), number, heading, [])
+                # A heading without an anchor of its own is linked through the nearest one above it.
+                anchor = heading_anchor(el) or (current.anchor if current else None)
+                current = Section(anchor, number, heading, [])
                 sections.append(current)
             elif current is not None:
                 text = clean(el.get_text(" "))
@@ -128,9 +138,12 @@ def section_chunks(paragraphs: list[str]) -> list[str]:
 def chunk_entry(slug: str, html: str) -> list[Chunk]:
     title, sections = parse_entry(html)
     chunks = []
+    per_anchor: dict[str, int] = {}  # sections can share an anchor, so numbering runs per anchor
     for section in sections:
         anchor = section.anchor or "preamble"
         url = entry_url(slug) + (f"#{section.anchor}" if section.anchor else "")
-        for k, text in enumerate(section_chunks(section.paragraphs)):
+        for text in section_chunks(section.paragraphs):
+            k = per_anchor.get(anchor, 0)
+            per_anchor[anchor] = k + 1
             chunks.append(Chunk(f"{slug}#{anchor}:{k}", slug, title, section.number, section.heading, url, text))
     return chunks
