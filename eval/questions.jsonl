@@ -1,0 +1,100 @@
+{"id": "s01", "type": "single", "question": "¿Qué diferencia hay entre un imperativo categórico y uno hipotético?", "gold": [{"entry": "kant-moral", "anchor": null, "hint": "imperativos categórico e hipotético"}]}
+{"id": "s02", "type": "single", "question": "¿Qué pretende demostrar el argumento de los zombis filosóficos?", "gold": [{"entry": "zombies", "anchor": null, "hint": "argumento de concebibilidad"}]}
+{"id": "s03", "type": "single", "question": "¿Qué intenta mostrar Searle con el argumento de la habitación china?", "gold": [{"entry": "chinese-room", "anchor": null, "hint": "el argumento"}]}
+{"id": "s04", "type": "single", "question": "¿En qué consiste la doctrina del doble efecto?", "gold": [{"entry": "double-effect", "anchor": null, "hint": "formulación de la doctrina"}]}
+{"id": "s05", "type": "single", "question": "¿Qué son los casos Gettier y qué ponen en duda?", "gold": [{"entry": "knowledge-analysis", "anchor": null, "hint": "problema de Gettier"}]}
+{"id": "s06", "type": "single", "question": "¿Qué es la suerte moral según Williams y Nagel?", "gold": [{"entry": "moral-luck", "anchor": null, "hint": "tipos de suerte moral"}]}
+{"id": "s07", "type": "single", "question": "¿En qué consiste la paradoja sorites?", "gold": [{"entry": "sorites-paradox", "anchor": null, "hint": "la paradoja"}]}
+{"id": "s08", "type": "single", "question": "¿Cómo plantea Zenón la paradoja de Aquiles y la tortuga?", "gold": [{"entry": "paradox-zeno", "anchor": null, "hint": "Aquiles"}]}
+{"id": "s09", "type": "single", "question": "¿Qué papel juega el genio maligno en la duda cartesiana?", "gold": [{"entry": "descartes-epistemology", "anchor": null, "hint": "duda / genio maligno"}]}
+{"id": "s10", "type": "single", "question": "¿Qué dice Hume sobre pasar del «es» al «debe»?", "gold": [{"entry": "hume-moral", "anchor": null, "hint": "is/ought"}]}
+{"id": "s11", "type": "single", "question": "¿Qué es el velo de ignorancia de Rawls?", "gold": [{"entry": "original-position", "anchor": null, "hint": "velo de ignorancia"}]}
+{"id": "s12", "type": "single", "question": "¿Qué distingue el consecuencialismo de reglas del de actos?", "gold": [{"entry": "consequentialism-rule", "anchor": null, "hint": "definición"}]}
+{"id": "s13", "type": "single", "question": "¿Qué papel tiene la eudaimonía en la ética de virtudes?", "gold": [{"entry": "ethics-virtue", "anchor": null, "hint": "eudaimonía"}]}
+{"id": "s14", "type": "single", "question": "¿Qué significa que «la existencia precede a la esencia»?", "gold": [{"entry": "existentialism", "anchor": null, "hint": "existencia y esencia"}]}
+{"id": "s15", "type": "single", "question": "¿Qué es el argumento del lenguaje privado de Wittgenstein?", "gold": [{"entry": "private-language", "anchor": null, "hint": "el argumento"}]}
+{"id": "s16", "type": "single", "question": "¿Qué sostiene el compatibilismo sobre el libre albedrío?", "gold": [{"entry": "compatibilism", "anchor": null, "hint": "definición"}]}
+{"id": "s17", "type": "single", "question": "¿Qué plantean los casos de fisión para la identidad personal?", "gold": [{"entry": "identity-personal", "anchor": null, "hint": "fisión / Parfit"}]}
+{"id": "s18", "type": "single", "question": "¿Qué ilustra la alegoría de la caverna de Platón?", "gold": [{"entry": "plato", "anchor": null, "hint": "caverna / formas"}]}
+{"id": "s19", "type": "single", "question": "¿Qué es el «problema difícil» de la conciencia?", "gold": [{"entry": "consciousness", "anchor": null, "hint": "hard problem"}]}
+{"id": "s20", "type": "single", "question": "¿Qué sostiene el funcionalismo sobre los estados mentales?", "gold": [{"entry": "functionalism", "anchor": null, "hint": "definición"}]}
+{"id": "s21", "type": "single", "question": "¿Qué entiende Kuhn por «paradigma»?", "gold": [{"entry": "thomas-kuhn", "anchor": null, "hint": "paradigmas"}]}
+{"id": "s22", "type": "single", "question": "¿Qué es el criterio de falsabilidad de Popper?", "gold": [{"entry": "popper", "anchor": null, "hint": "falsabilidad"}]}
+{"id": "s23", "type": "single", "question": "¿Cuál es el problema de la inducción planteado por Hume?", "gold": [{"entry": "induction-problem", "anchor": null, "hint": "el problema de Hume"}]}
+{"id": "s24", "type": "single", "question": "¿En qué consiste la apuesta de Pascal?", "gold": [{"entry": "pascal-wager", "anchor": null, "hint": "el argumento"}]}
+{"id": "s25", "type": "single", "question": "¿Cómo es el argumento ontológico de Anselmo?", "gold": [{"entry": "ontological-arguments", "anchor": null, "hint": "Anselmo"}]}
+{"id": "s26", "type": "single", "question": "¿Qué es el eterno retorno en Nietzsche?", "gold": [{"entry": "nietzsche", "anchor": null, "hint": "eterno retorno"}]}
+{"id": "s27", "type": "single", "question": "¿Qué quiere decir Beauvoir con «no se nace mujer, se llega a serlo»?", "gold": [{"entry": "beauvoir", "anchor": null, "hint": "El segundo sexo"}]}
+{"id": "s28", "type": "single", "question": "¿Qué significa «ren» en la ética de Confucio?", "gold": [{"entry": "confucius", "anchor": null, "hint": "ren"}]}
+{"id": "s29", "type": "single", "question": "¿Qué significa «wu wei» en el Daodejing?", "gold": [{"entry": "laozi", "anchor": null, "hint": "wu wei"}]}
+{"id": "s30", "type": "single", "question": "¿Qué entiende Nagarjuna por vacuidad?", "gold": [{"entry": "nagarjuna", "anchor": null, "hint": "vacuidad"}]}
+{"id": "s31", "type": "single", "question": "¿Qué es el término medio en la ética de Aristóteles?", "gold": [{"entry": "aristotle-ethics", "anchor": null, "hint": "doctrina del medio"}]}
+{"id": "s32", "type": "single", "question": "¿Qué distinguían los estoicos entre lo que depende de nosotros y lo que no?", "gold": [{"entry": "stoicism", "anchor": null, "hint": "ética estoica"}]}
+{"id": "s33", "type": "single", "question": "¿Por qué decía Epicuro que la muerte no es nada para nosotros?", "gold": [{"entry": "epicurus", "anchor": null, "hint": "muerte"}]}
+{"id": "s34", "type": "single", "question": "¿Qué es el contractualismo de Scanlon?", "gold": [{"entry": "contractualism", "anchor": null, "hint": "Scanlon"}]}
+{"id": "s35", "type": "single", "question": "¿Cómo describe Hobbes el estado de naturaleza?", "gold": [{"entry": "hobbes-moral", "anchor": null, "hint": "estado de naturaleza"}]}
+{"id": "s36", "type": "single", "question": "¿Cómo justifica Locke la propiedad a partir del trabajo?", "gold": [{"entry": "locke-political", "anchor": null, "hint": "propiedad"}]}
+{"id": "s37", "type": "single", "question": "¿Qué entiende Marx por alienación?", "gold": [{"entry": "marx", "anchor": null, "hint": "alienación"}]}
+{"id": "s38", "type": "single", "question": "¿Qué quiso decir Arendt con la «banalidad del mal»?", "gold": [{"entry": "arendt", "anchor": null, "hint": "Eichmann"}]}
+{"id": "s39", "type": "single", "question": "¿Qué es el biopoder en Foucault?", "gold": [{"entry": "foucault", "anchor": null, "hint": "biopoder"}]}
+{"id": "s40", "type": "single", "question": "¿Qué significa «Dasein» en Heidegger?", "gold": [{"entry": "heidegger", "anchor": null, "hint": "Dasein"}]}
+{"id": "s41", "type": "single", "question": "¿Qué es la epoché en la fenomenología de Husserl?", "gold": [{"entry": "husserl", "anchor": null, "hint": "reducción fenomenológica"}]}
+{"id": "s42", "type": "single", "question": "¿Qué distinción hace Frege entre sentido y referencia?", "gold": [{"entry": "frege", "anchor": null, "hint": "Sinn/Bedeutung"}]}
+{"id": "s43", "type": "single", "question": "¿En qué consiste la teoría de las descripciones de Russell?", "gold": [{"entry": "descriptions", "anchor": null, "hint": "Russell"}]}
+{"id": "s44", "type": "single", "question": "¿Qué afirma el primer teorema de incompletitud de Gödel?", "gold": [{"entry": "goedel-incompleteness", "anchor": null, "hint": "primer teorema"}]}
+{"id": "s45", "type": "single", "question": "¿Qué es la paradoja del mentiroso?", "gold": [{"entry": "liar-paradox", "anchor": null, "hint": "la paradoja"}]}
+{"id": "s46", "type": "single", "question": "¿Qué es un mundo posible en filosofía?", "gold": [{"entry": "possible-worlds", "anchor": null, "hint": "definición"}]}
+{"id": "s47", "type": "single", "question": "¿Qué es el problema del alineamiento de valores en la ética de la IA?", "gold": [{"entry": "ethics-ai", "anchor": null, "hint": "alineamiento / control"}]}
+{"id": "s48", "type": "single", "question": "¿Qué argumento da Singer contra el especismo?", "gold": [{"entry": "moral-animal", "anchor": null, "hint": "Singer / especismo"}]}
+{"id": "s49", "type": "single", "question": "¿En qué consiste el test de Turing?", "gold": [{"entry": "turing-test", "anchor": null, "hint": "el juego de imitación"}]}
+{"id": "s50", "type": "single", "question": "¿Cómo funciona la dialéctica en Hegel?", "gold": [{"entry": "hegel-dialectics", "anchor": null, "hint": "estructura dialéctica"}]}
+{"id": "m01", "type": "multi", "question": "¿En qué se diferencian Aristóteles y los estoicos sobre si la virtud basta para la felicidad?", "gold": [{"entry": "aristotle-ethics", "anchor": null}, {"entry": "stoicism", "anchor": null}]}
+{"id": "m02", "type": "multi", "question": "¿Qué dirían Kant y un consecuencialista sobre mentir para salvar a alguien?", "gold": [{"entry": "kant-moral", "anchor": null}, {"entry": "consequentialism", "anchor": null}]}
+{"id": "m03", "type": "multi", "question": "¿Cómo se opone el conductismo de Ryle al dualismo cartesiano?", "gold": [{"entry": "dualism", "anchor": null}, {"entry": "behaviorism", "anchor": null}]}
+{"id": "m04", "type": "multi", "question": "¿Cómo respondió Kant al escepticismo de Hume sobre la causalidad?", "gold": [{"entry": "hume", "anchor": null}, {"entry": "kant-hume-causality", "anchor": null}]}
+{"id": "m05", "type": "multi", "question": "¿En qué se diferencian Hobbes y Locke en su visión del estado de naturaleza?", "gold": [{"entry": "hobbes-moral", "anchor": null}, {"entry": "locke-political", "anchor": null}]}
+{"id": "m06", "type": "multi", "question": "¿Por qué rechaza Nozick la justicia distributiva de Rawls?", "gold": [{"entry": "original-position", "anchor": null}, {"entry": "nozick-political", "anchor": null}]}
+{"id": "m07", "type": "multi", "question": "¿En qué discrepan Popper y Kuhn sobre cómo avanza la ciencia?", "gold": [{"entry": "popper", "anchor": null}, {"entry": "thomas-kuhn", "anchor": null}]}
+{"id": "m08", "type": "multi", "question": "¿En qué difieren Frege y Russell sobre los nombres propios?", "gold": [{"entry": "frege", "anchor": null}, {"entry": "descriptions", "anchor": null}]}
+{"id": "m09", "type": "multi", "question": "¿Por qué el argumento de los zombis es un problema para el funcionalismo?", "gold": [{"entry": "zombies", "anchor": null}, {"entry": "functionalism", "anchor": null}]}
+{"id": "m10", "type": "multi", "question": "¿Qué relación hay entre la habitación china y el test de Turing?", "gold": [{"entry": "chinese-room", "anchor": null}, {"entry": "turing-test", "anchor": null}]}
+{"id": "m11", "type": "multi", "question": "¿Cómo argumentan Epicuro y Lucrecio contra el miedo a la muerte?", "gold": [{"entry": "epicurus", "anchor": null}, {"entry": "lucretius", "anchor": null}]}
+{"id": "m12", "type": "multi", "question": "¿Qué añade Mencio a Confucio sobre la bondad de la naturaleza humana?", "gold": [{"entry": "confucius", "anchor": null}, {"entry": "mencius", "anchor": null}]}
+{"id": "m13", "type": "multi", "question": "¿Cómo pasa Nietzsche del pesimismo de Schopenhauer a la afirmación de la vida?", "gold": [{"entry": "schopenhauer", "anchor": null}, {"entry": "nietzsche", "anchor": null}]}
+{"id": "m14", "type": "multi", "question": "¿Qué papel tiene la angustia en Heidegger y en Sartre?", "gold": [{"entry": "heidegger", "anchor": null}, {"entry": "sartre", "anchor": null}]}
+{"id": "m15", "type": "multi", "question": "¿Por qué critica Aristóteles la teoría platónica de las formas?", "gold": [{"entry": "plato", "anchor": null}, {"entry": "aristotle-metaphysics", "anchor": null}]}
+{"id": "m16", "type": "multi", "question": "¿Qué argumentos enfrentan a compatibilistas e incompatibilistas?", "gold": [{"entry": "compatibilism", "anchor": null}, {"entry": "incompatibilism-arguments", "anchor": null}]}
+{"id": "m17", "type": "multi", "question": "¿Cómo responde Leibniz al problema del mal?", "gold": [{"entry": "leibniz", "anchor": null}, {"entry": "leibniz-evil", "anchor": null}]}
+{"id": "m18", "type": "multi", "question": "¿Cómo se relaciona la idea de género de Beauvoir con las teorías feministas posteriores?", "gold": [{"entry": "beauvoir", "anchor": null}, {"entry": "feminism-gender", "anchor": null}]}
+{"id": "m19", "type": "multi", "question": "¿Qué toma Marx de la dialéctica de Hegel y qué cambia?", "gold": [{"entry": "hegel-dialectics", "anchor": null}, {"entry": "marx", "anchor": null}]}
+{"id": "m20", "type": "multi", "question": "¿Cómo intenta el fiabilismo responder a los casos Gettier?", "gold": [{"entry": "knowledge-analysis", "anchor": null}, {"entry": "reliabilism", "anchor": null}]}
+{"id": "m21", "type": "multi", "question": "¿Qué es la teoría del error de Mackie y cómo responde el realismo moral?", "gold": [{"entry": "moral-realism", "anchor": null}, {"entry": "moral-anti-realism", "anchor": null}]}
+{"id": "m22", "type": "multi", "question": "¿En qué se diferencia la apuesta de Pascal de un argumento ontológico?", "gold": [{"entry": "pascal-wager", "anchor": null}, {"entry": "ontological-arguments", "anchor": null}]}
+{"id": "m23", "type": "multi", "question": "¿Qué relación hay entre la paradoja sorites y la vaguedad?", "gold": [{"entry": "sorites-paradox", "anchor": null}, {"entry": "vagueness", "anchor": null}]}
+{"id": "m24", "type": "multi", "question": "¿Qué tienen en común la paradoja del mentiroso y la demostración de Gödel?", "gold": [{"entry": "liar-paradox", "anchor": null}, {"entry": "goedel-incompleteness", "anchor": null}]}
+{"id": "m25", "type": "multi", "question": "¿En qué se diferencia la ética de virtudes de la deontología?", "gold": [{"entry": "ethics-virtue", "anchor": null}, {"entry": "ethics-deontological", "anchor": null}]}
+{"id": "m26", "type": "multi", "question": "¿Qué dice Arendt sobre la responsabilidad colectiva?", "gold": [{"entry": "arendt", "anchor": null}, {"entry": "collective-responsibility", "anchor": null}]}
+{"id": "m27", "type": "multi", "question": "¿Qué hace Foucault con el panóptico de Bentham?", "gold": [{"entry": "foucault", "anchor": null}, {"entry": "bentham", "anchor": null}]}
+{"id": "m28", "type": "multi", "question": "¿En qué se diferencian Laozi y Zhuangzi?", "gold": [{"entry": "laozi", "anchor": null}, {"entry": "zhuangzi", "anchor": null}]}
+{"id": "m29", "type": "multi", "question": "¿Qué estatus moral tienen los animales para Kant y para Singer?", "gold": [{"entry": "moral-animal", "anchor": null}, {"entry": "kant-moral", "anchor": null}]}
+{"id": "m30", "type": "multi", "question": "¿En qué se diferencian la doctrina del doble efecto y la distinción entre hacer y permitir?", "gold": [{"entry": "double-effect", "anchor": null}, {"entry": "doing-allowing", "anchor": null}]}
+{"id": "n01", "type": "none", "subtype": "invented", "question": "¿Qué es la teoría del «ser liminal» del filósofo Ernesto Valcárcel?", "gold": []}
+{"id": "n02", "type": "none", "subtype": "invented", "question": "¿Qué es el «principio de resonancia ontológica» de Heidegger?", "gold": []}
+{"id": "n03", "type": "none", "subtype": "invented", "question": "¿Qué afirma el «teorema de Martínez-Lloyd» sobre la conciencia?", "gold": []}
+{"id": "n04", "type": "none", "subtype": "invented", "question": "¿Qué defiende Simone de Beauvoir en su libro «La razón digital»?", "gold": []}
+{"id": "n05", "type": "none", "subtype": "invented", "question": "¿En qué consiste la «ética de la tercera orilla» de la escuela de Kioto tardía?", "gold": []}
+{"id": "n06", "type": "none", "subtype": "out_of_scope", "question": "¿Qué opinaba Platón de los smartphones?", "gold": []}
+{"id": "n07", "type": "none", "subtype": "out_of_scope", "question": "¿Quién ganó el Mundial de fútbol de 2022?", "gold": []}
+{"id": "n08", "type": "none", "subtype": "out_of_scope", "question": "¿Cuál es la receta de la paella valenciana?", "gold": []}
+{"id": "n09", "type": "none", "subtype": "out_of_scope", "question": "¿Qué número de zapato calzaba Hume?", "gold": []}
+{"id": "n10", "type": "none", "subtype": "out_of_scope", "question": "¿Qué dijo Nietzsche sobre internet?", "gold": []}
+{"id": "n11", "type": "none", "subtype": "out_of_scope", "question": "¿Cuál es la cotización del bitcoin hoy?", "gold": []}
+{"id": "n12", "type": "none", "subtype": "out_of_scope", "question": "¿Qué dijo Confucio sobre la teoría de la relatividad?", "gold": []}
+{"id": "n13", "type": "none", "subtype": "out_of_scope", "question": "¿Cuál era el plato favorito de Kant?", "gold": []}
+{"id": "n14", "type": "none", "subtype": "out_of_scope", "question": "¿Cómo refutó Aristóteles a Descartes?", "gold": []}
+{"id": "n15", "type": "none", "subtype": "out_of_scope", "question": "¿Qué filósofo griego inventó la imprenta?", "gold": []}
+{"id": "f01", "type": "false_premise", "question": "¿Por qué Kant defendía el utilitarismo?", "gold": [{"entry": "kant-moral", "anchor": null}]}
+{"id": "f02", "type": "false_premise", "question": "¿Qué escribió Sócrates en su tratado sobre la virtud?", "gold": [{"entry": "socrates", "anchor": null}]}
+{"id": "f03", "type": "false_premise", "question": "¿Por qué Hume era racionalista?", "gold": [{"entry": "hume", "anchor": null}]}
+{"id": "f04", "type": "false_premise", "question": "¿Por qué Descartes negaba que existiera la mente?", "gold": [{"entry": "descartes-epistemology", "anchor": null}]}
+{"id": "f05", "type": "false_premise", "question": "¿Por qué Popper defendía el verificacionismo del Círculo de Viena?", "gold": [{"entry": "popper", "anchor": null}]}

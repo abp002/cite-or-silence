@@ -5,10 +5,12 @@ from pathlib import Path
 
 from cite_or_silence.chunk import chunk_entry
 from cite_or_silence.fetch import fetch_all
+from cite_or_silence import questions
 
 DATA = Path("data")
 RAW = DATA / "raw"
 CHUNKS = DATA / "chunks.jsonl"
+QUESTIONS = Path("eval/questions.jsonl")
 
 
 def cmd_fetch(args) -> None:
@@ -36,6 +38,15 @@ def cmd_chunk(args) -> None:
         print(f"{len(empty)} entries without chunks: {', '.join(empty[:20])}")
 
 
+def cmd_questions(args) -> None:
+    if args.entry:
+        print("\n".join(questions.headings(args.entry, RAW)))
+        return
+    problems = questions.check(questions.load(QUESTIONS), RAW)
+    print("\n".join(problems) or "question set ready")
+    print(f"{len(problems)} problems")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="cite-or-silence")
     sub = parser.add_subparsers(required=True)
@@ -44,5 +55,8 @@ def main() -> None:
     fetch.set_defaults(func=cmd_fetch)
     chunk = sub.add_parser("chunk", help="cut data/raw into data/chunks.jsonl")
     chunk.set_defaults(func=cmd_chunk)
+    qs = sub.add_parser("questions", help="check eval/questions.jsonl, or list an entry's sections")
+    qs.add_argument("entry", nargs="?", help="list this entry's anchors and headings")
+    qs.set_defaults(func=cmd_questions)
     args = parser.parse_args()
     args.func(args)
