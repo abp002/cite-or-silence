@@ -55,7 +55,8 @@ def cmd_index(args) -> None:
 def cmd_search(args) -> None:
     con = search.connect(DB)
     vector = embed.encode(embed.load_model(), [args.query])[0]
-    for chunk_id in search.search(con, args.query, vector, args.mode, args.k):
+    scorer = embed.load_reranker() if args.mode == "rerank" else None
+    for chunk_id in search.search(con, args.query, vector, args.mode, args.k, scorer):
         heading, text = con.execute("SELECT heading, text FROM chunks WHERE id = ?", [chunk_id]).fetchone()
         print(f"{chunk_id}  [{heading}]\n    {text[:200]}...\n")
 
@@ -69,27 +70,28 @@ def cmd_recall(args) -> None:
     number = {(s.entry, s.anchor): s.number for s in sections.values()}
     asked = [q for q in questions.load(QUESTIONS) if q["gold"]]
     vectors = embed.encode(embed.load_model(), [q["question"] for q in asked])
+    scorer = embed.load_reranker()
     scores = {mode: [] for mode in search.MODES}
     entry_scores = {mode: [] for mode in search.MODES}
     misses = []
     for q, vector in zip(asked, vectors):
         gold = [evaluate.Section(g["entry"], g["anchor"], number[g["entry"], g["anchor"]]) for g in q["gold"]]
         for mode in search.MODES:
-            got = [sections[i] for i in search.search(con, q["question"], vector, mode, args.k)]
+            got = [sections[i] for i in search.search(con, q["question"], vector, mode, args.k, scorer)]
             scores[mode].append((q["type"], evaluate.recall(gold, got)))
             entry_scores[mode].append((q["type"], evaluate.entry_recall(gold, got)))
-            if mode == "hybrid" and scores[mode][-1][1] < 1:
+            if mode == args.misses and scores[mode][-1][1] < 1:
                 misses.append((q, got))
     tables = {m: evaluate.by_type(scores[m]) for m in search.MODES}
     entry_tables = {m: evaluate.by_type(entry_scores[m]) for m in search.MODES}
     print(f"Recall@{args.k} by section (by entry in brackets); 'none' questions have no gold\n")
     print(f"{'type':<14}{'n':>4}" + "".join(f"{m:>18}" for m in search.MODES))
     for t in ("single", "multi", "false_premise", "all"):
-        n = tables["hybrid"][t][0]
+        n = tables["dense"][t][0]
         cells = "".join(f"{tables[m][t][1]:>9.2f} [{entry_tables[m][t][1]:.2f}]" for m in search.MODES)
         print(f"{t:<14}{n:>4}{cells}")
     if args.misses:
-        print(f"\nhybrid misses ({len(misses)}):")
+        print(f"\n{args.misses} misses ({len(misses)}):")
         for q, got in misses:
             want = ", ".join(f"{g['entry']}#{g['anchor']}" for g in q["gold"])
             print(f"- {q['id']} {q['question']}\n    want {want}\n    got  {', '.join(f'{s.entry}#{s.anchor}' for s in got)}")
@@ -123,7 +125,7 @@ def main() -> None:
     se.set_defaults(func=cmd_search)
     rc = sub.add_parser("recall", help="Recall@k of every search mode against eval/questions.jsonl")
     rc.add_argument("-k", type=int, default=5)
-    rc.add_argument("--misses", action="store_true", help="list the questions hybrid search misses")
+    rc.add_argument("--misses", nargs="?", const="rerank", choices=search.MODES, help="list the questions this mode misses (default: rerank)")
     rc.set_defaults(func=cmd_recall)
     qs = sub.add_parser("questions", help="check eval/questions.jsonl, or list an entry's sections")
     qs.add_argument("entry", nargs="?", help="list this entry's anchors and headings")

@@ -32,7 +32,11 @@ Test fixtures use invented text that only mimics SEP markup.
   Resumable. ~9 chunks/s on the M4, so the full run takes hours, not minutes.
 - `index`: loads chunks + vectors into `data/sep.duckdb`: HNSW index (vss, cosine) and BM25 (fts,
   english stemmer, over heading + text). HNSW persistence is an experimental DuckDB flag.
-- Search modes: `dense`, `bm25`, `hybrid` (top 50 of each fused with RRF, k = 60).
+- Search modes: `dense`, `bm25`, `hybrid` (top 50 of each fused with RRF, k = 60), `rerank` (dense top 50
+  reordered by bge-reranker-v2-m3) and `diverse` (dense, at most 2 chunks per entry, cap fixed before
+  measuring). Recall@5 by section: dense 0.51, hybrid 0.37, rerank 0.49, diverse 0.51 (multi 0.30 vs 0.28);
+  Recall@50 dense 0.86. The gold is in the pool but badly ordered, and none of the cheap reorderings beat
+  dense: the limit is Spanish questions against English text. Production search: `diverse`, k = 10.
 - `recall`: Recall@k per question type for the three modes, by section and by entry. A chunk from
   subsection 3.2 counts for gold section 3. `none` questions have no gold and are left out.
   Questions are Spanish and the SEP English, so BM25 alone only helps with names and loanwords.

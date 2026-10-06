@@ -4,18 +4,26 @@ Two searches look at the same chunks in different ways and their rankings are me
 - dense: the question's embedding against every chunk's embedding (meaning, any language),
   answered by an HNSW index so it doesn't compare against all 156k chunks one by one;
 - bm25: classic keyword search over heading + text (exact words, names, rare terms);
-- hybrid: both rankings fused with Reciprocal Rank Fusion.
+- hybrid: both rankings fused with Reciprocal Rank Fusion;
+- diverse: dense, but at most PER_ENTRY chunks from one entry, so a question comparing two
+  authors gets both entries instead of five chunks of the first;
+- rerank: the dense pool read again by a cross-encoder, which sees question and passage together
+  and so can tell the exact section apart from its neighbours in the same entry.
 """
 
 import json
+from collections.abc import Callable
 from pathlib import Path
 
 import duckdb
 import numpy as np
 import pyarrow as pa
 
-MODES = ("dense", "bm25", "hybrid")
-POOL = 50  # how deep each search looks before fusing
+MODES = ("dense", "bm25", "hybrid", "rerank", "diverse")
+POOL = 50  # how deep each search looks before fusing or reranking
+PER_ENTRY = 2  # fixed before measuring it, not tuned on the eval set
+
+Scorer = Callable[[str, list[str]], list[float]]  # (question, passages) -> one score per passage
 
 
 def rrf(rankings: list[list[str]], k: int = 60) -> list[str]:
@@ -81,11 +89,46 @@ def bm25(con: duckdb.DuckDBPyConnection, query: str, n: int = POOL) -> list[str]
     return [r[0] for r in rows]
 
 
-def search(con: duckdb.DuckDBPyConnection, query: str, vector: np.ndarray, mode: str = "hybrid", k: int = 5) -> list[str]:
+def cap_per_entry(ids: list[str], k: int, cap: int = PER_ENTRY) -> list[str]:
+    """The first k ids, skipping any whose entry already has cap ids in; order is kept."""
+    taken: dict[str, int] = {}
+    kept = []
+    for i in ids:
+        entry = i.split("#", 1)[0]
+        if taken.get(entry, 0) < cap:
+            taken[entry] = taken.get(entry, 0) + 1
+            kept.append(i)
+            if len(kept) == k:
+                break
+    return kept
+
+
+def rerank(con: duckdb.DuckDBPyConnection, query: str, ids: list[str], scorer: Scorer) -> list[str]:
+    """Reorder ids by the scorer's verdict on each passage; ties keep the incoming order."""
+    texts = dict(con.execute("SELECT id, heading || '\n' || text FROM chunks WHERE id IN ?", [ids]).fetchall())
+    scores = scorer(query, [texts[i] for i in ids])
+    order = sorted(range(len(ids)), key=lambda n: -scores[n])
+    return [ids[n] for n in order]
+
+
+def search(
+    con: duckdb.DuckDBPyConnection,
+    query: str,
+    vector: np.ndarray,
+    mode: str = "hybrid",
+    k: int = 5,
+    scorer: Scorer | None = None,
+) -> list[str]:
     if mode == "dense":
         return dense(con, vector, k)
     if mode == "bm25":
         return bm25(con, query, k)
+    if mode == "diverse":
+        return cap_per_entry(dense(con, vector), k)
+    if mode == "rerank":
+        if scorer is None:
+            raise ValueError("rerank mode needs a scorer")
+        return rerank(con, query, dense(con, vector), scorer)[:k]
     return rrf([dense(con, vector), bm25(con, query)])[:k]
 
 

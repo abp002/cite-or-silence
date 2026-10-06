@@ -13,6 +13,7 @@ from pathlib import Path
 import numpy as np
 
 MODEL = "BAAI/bge-m3"
+RERANKER = "BAAI/bge-reranker-v2-m3"  # multilingual cross-encoder from the same family
 DIM = 1024
 SHARD = 4096
 MAX_TOKENS = 512  # chunks are at most ~300 words; longer inputs only slow the model down
@@ -28,6 +29,22 @@ def load_model():
     if device == "mps":
         model.half()
     return model
+
+
+def load_reranker():
+    """A scorer for search.rerank: reads each (question, passage) pair and returns its relevance."""
+    import torch
+    from sentence_transformers import CrossEncoder
+
+    device = "mps" if torch.backends.mps.is_available() else "cpu"
+    model = CrossEncoder(RERANKER, device=device, max_length=MAX_TOKENS)
+    if device == "mps":
+        model.model.half()
+
+    def scorer(query: str, passages: list[str]) -> list[float]:
+        return model.predict([(query, p) for p in passages], batch_size=8).tolist()
+
+    return scorer
 
 
 def encode(model, texts: list[str], batch_size: int = 8) -> np.ndarray:

@@ -1,6 +1,6 @@
 import numpy as np
 
-from cite_or_silence.search import build_index, bm25, connect, dense, rrf, search
+from cite_or_silence.search import build_index, bm25, cap_per_entry, connect, dense, rrf, search
 
 
 def test_rrf_rewards_agreement_over_a_single_top_spot():
@@ -32,3 +32,30 @@ def test_index_answers_both_kinds_of_search(tmp_path):
     assert dense(con, np.array([0.1, 0.9, 0.2]), 2) == ["x#Two:0", "y#Three:0"]
     assert bm25(con, "¿Qué hacen las tides?", 5) == ["x#One:0"]  # english stemming: tides -> tide
     assert search(con, "dough", np.array([0, 0, 1.0]), "hybrid", 2) == ["x#Two:0", "y#Three:0"]
+
+
+def test_rerank_puts_the_scorers_favourite_first(tmp_path):
+    # Dense ranks the bread chunk first; the scorer only cares whether "moon" appears.
+    chunks = [
+        chunk("x#One:0", "Moons", "Lunar tides follow the moon around the planet."),
+        chunk("x#Two:0", "Bread", "Bakers knead dough before it rises."),
+        chunk("y#Three:0", "Rivers", "Water runs downhill towards the sea."),
+    ]
+    vectors = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=np.float32)
+    con = connect(tmp_path / "t.duckdb")
+    build_index(con, chunks, vectors)
+    seen = []
+
+    def scorer(query, passages):
+        seen.extend(passages)
+        return [float("moon" in p) for p in passages]
+
+    got = search(con, "tides", np.array([0.1, 0.9, 0.2]), "rerank", 2, scorer)
+    assert got == ["x#One:0", "x#Two:0"]  # moon first, then dense order for the ties
+    assert "Moons\nLunar tides follow the moon around the planet." in seen  # heading travels with the text
+
+
+def test_cap_per_entry_lets_other_entries_in():
+    ids = ["a#1:0", "a#2:0", "a#3:0", "b#1:0", "a#4:0", "c#1:0"]
+    assert cap_per_entry(ids, 4, cap=2) == ["a#1:0", "a#2:0", "b#1:0", "c#1:0"]
+    assert cap_per_entry(ids, 2, cap=2) == ["a#1:0", "a#2:0"]  # stops at k
