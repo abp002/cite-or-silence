@@ -4,7 +4,7 @@ import statistics
 from pathlib import Path
 
 from cite_or_silence.chunk import chunk_entry
-from cite_or_silence import answer, embed, evaluate, provider, search
+from cite_or_silence import answer, bench, embed, evaluate, provider, search
 from cite_or_silence.fetch import fetch_all
 from cite_or_silence import questions
 
@@ -75,6 +75,24 @@ def cmd_ask(args) -> None:
             print(f"- {s.text} [{s.source}] -- {s.dropped}\n    quote: {s.quote}")
 
 
+def cmd_bench(args) -> None:
+    con = search.connect(DB)
+    model = embed.load_model()
+    llm = provider.get(args.provider)
+
+    def retrieve(question):
+        vector = embed.encode(model, [question])[0]
+        return answer.passages_of(con, search.search(con, question, vector, "diverse", 10))
+
+    asked = questions.load(QUESTIONS)
+    if args.ids:
+        asked = [q for q in asked if q["id"] in args.ids.split(",")]
+    out = DATA / "bench" / llm.name.replace(":", "_")
+    results = bench.run(con, asked, retrieve, llm, out, args.limit, log=lambda m: print(m, flush=True))
+    print(f"\n{len(results)} questions in {out} ({llm.name})\n")
+    print(bench.report(results))
+
+
 def cmd_recall(args) -> None:
     con = search.connect(DB)
     sections = {
@@ -142,6 +160,11 @@ def main() -> None:
     ak.add_argument("--provider", choices=("codex", "ollama"), default="codex")
     ak.add_argument("-k", type=int, default=10)
     ak.set_defaults(func=cmd_ask)
+    bn = sub.add_parser("bench", help="bare vs rag vs verified over the question set (resumable)")
+    bn.add_argument("--provider", choices=("codex", "ollama"), default="codex")
+    bn.add_argument("--ids", help="comma-separated question ids to run")
+    bn.add_argument("--limit", type=int, help="run at most N new questions")
+    bn.set_defaults(func=cmd_bench)
     rc = sub.add_parser("recall", help="Recall@k of every search mode against eval/questions.jsonl")
     rc.add_argument("-k", type=int, default=5)
     rc.add_argument("--misses", nargs="?", const="rerank", choices=search.MODES, help="list the questions this mode misses (default: rerank)")

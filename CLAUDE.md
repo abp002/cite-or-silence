@@ -50,6 +50,14 @@ Test fixtures use invented text that only mimics SEP markup.
   tokens per call because of Codex's agent prompt. `ollama` (qwen3:14b) is the free local fallback.
   If codex fails with "refresh token was already used", run `codex login` again.
 
+- `bench`: three arms of the same model per question: `bare` (no retrieval), `rag` (before
+  verification), `verified`. Every arm may return an empty list. One judge call per question grades the
+  arms under shuffled letters: none -> abstains; false_premise -> corrects; single/multi -> each
+  sentence against the gold sections + the retrieved passages (supported / contradicted / unbacked).
+  Rules fixed before the first run. Results in `data/bench/<provider>/<qid>.json`, resumable.
+- Known limit: a sentence about the question itself ("the premise is wrong") has no quote to back it,
+  so verification drops the explicit correction of a false premise.
+
 ## Plan (v1)
 1. Fetch and chunk, checking sections come out right.
 2. Question set (~100: single entry, multi-entry, not in the SEP), written BEFORE the RAG exists.
@@ -70,3 +78,4 @@ The README must say which model produced each number.
 - `uv run cite-or-silence search "question" [--mode dense|bm25|hybrid] [-k 5]`
 - `uv run cite-or-silence recall [-k 5] [--misses MODE]`
 - `uv run cite-or-silence ask "question" [--provider codex|ollama] [-k 10]`
+- `uv run cite-or-silence bench [--ids s01,m02] [--limit N] [--provider codex|ollama]` (~1 h for all)
