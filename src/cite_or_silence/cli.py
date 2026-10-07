@@ -47,13 +47,13 @@ def cmd_embed(args) -> None:
 
 def cmd_index(args) -> None:
     chunks = search.chunks_of(CHUNKS)
-    con = search.connect(DB)
+    con = search.connect(DB)  # writes
     search.build_index(con, chunks, embed.load_all(EMBEDDINGS))
     print(f"{len(chunks)} chunks indexed in {DB}")
 
 
 def cmd_search(args) -> None:
-    con = search.connect(DB)
+    con = search.connect(DB, read_only=True)
     vector = embed.encode(embed.load_model(), [args.query])[0]
     scorer = embed.load_reranker() if args.mode == "rerank" else None
     for chunk_id in search.search(con, args.query, vector, args.mode, args.k, scorer):
@@ -62,7 +62,7 @@ def cmd_search(args) -> None:
 
 
 def cmd_ask(args) -> None:
-    con = search.connect(DB)
+    con = search.connect(DB, read_only=True)
     vector = embed.encode(embed.load_model(), [args.question])[0]
     passages = answer.passages_of(con, search.search(con, args.question, vector, "diverse", args.k))
     llm = provider.get(args.provider)
@@ -76,7 +76,7 @@ def cmd_ask(args) -> None:
 
 
 def cmd_bench(args) -> None:
-    con = search.connect(DB)
+    con = search.connect(DB, read_only=True)
     model = embed.load_model()
     llm = provider.get(args.provider)
 
@@ -94,7 +94,7 @@ def cmd_bench(args) -> None:
 
 
 def cmd_recall(args) -> None:
-    con = search.connect(DB)
+    con = search.connect(DB, read_only=True)
     sections = {
         row[0]: evaluate.Section(*row[1:])
         for row in con.execute("SELECT id, entry, anchor, section FROM chunks").fetchall()

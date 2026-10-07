@@ -26,7 +26,7 @@ class Codex:
     sees nothing but the prompt. stdin is closed: with it open, `codex exec` waits for more input.
     """
 
-    def __init__(self, model: str = "gpt-6-astra", effort: str = "low", timeout: int = 300):
+    def __init__(self, model: str = "gpt-6-luna", effort: str = "low", timeout: int = 300):
         self.model, self.effort, self.timeout = model, effort, timeout
         self.name = f"codex:{model}:{effort}"
 
@@ -57,7 +57,7 @@ class Ollama:
         r = httpx.post(
             f"{self.url}/api/chat",
             json={"model": self.model, "messages": [{"role": "user", "content": prompt}],
-                  "format": schema, "stream": False, "options": {"temperature": 0}},
+                  "format": schema, "stream": False, "think": False, "options": {"temperature": 0}},
             timeout=self.timeout,
         )  # fmt: skip
         r.raise_for_status()

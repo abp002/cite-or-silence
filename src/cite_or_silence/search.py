@@ -40,8 +40,9 @@ def rrf(rankings: list[list[str]], k: int = 60) -> list[str]:
     return sorted(scores, key=lambda item: -scores[item])
 
 
-def connect(db: Path) -> duckdb.DuckDBPyConnection:
-    con = duckdb.connect(str(db))
+def connect(db: Path, read_only: bool = False) -> duckdb.DuckDBPyConnection:
+    """read_only lets several processes search at once; only `index` needs to write."""
+    con = duckdb.connect(str(db), read_only=read_only)
     for ext in ("vss", "fts"):
         con.install_extension(ext)
         con.load_extension(ext)
