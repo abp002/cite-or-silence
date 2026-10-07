@@ -41,6 +41,15 @@ Test fixtures use invented text that only mimics SEP markup.
   subsection 3.2 counts for gold section 3. `none` questions have no gold and are left out.
   Questions are Spanish and the SEP English, so BM25 alone only helps with names and loanwords.
 
+- `ask`: diverse search (k = 10) -> the model answers as JSON sentences, each with a passage number
+  and a quote copied from it in English -> `verify` drops a sentence whose quote is not in the cited
+  passage (exact after normalising quotes, dashes, whitespace, case; at least 5 words) and then asks a
+  judge, in one call per answer, whether each quote supports its sentence. Nothing left -> silence.
+- Providers (`provider.py`): `codex` runs `codex exec` with the ChatGPT login (OAuth, no API key) in an
+  empty temp dir, read-only, `--ignore-user-config`, stdin closed (open stdin makes it hang); ~15k
+  tokens per call because of Codex's agent prompt. `ollama` (qwen3:14b) is the free local fallback.
+  If codex fails with "refresh token was already used", run `codex login` again.
+
 ## Plan (v1)
 1. Fetch and chunk, checking sections come out right.
 2. Question set (~100: single entry, multi-entry, not in the SEP), written BEFORE the RAG exists.
@@ -59,4 +68,5 @@ The README must say which model produced each number.
 - `uv run cite-or-silence embed` (hours; run with `caffeinate -i`)
 - `uv run cite-or-silence index`
 - `uv run cite-or-silence search "question" [--mode dense|bm25|hybrid] [-k 5]`
-- `uv run cite-or-silence recall [-k 5] [--misses]`
+- `uv run cite-or-silence recall [-k 5] [--misses MODE]`
+- `uv run cite-or-silence ask "question" [--provider codex|ollama] [-k 10]`

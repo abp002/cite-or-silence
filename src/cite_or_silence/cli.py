@@ -4,7 +4,7 @@ import statistics
 from pathlib import Path
 
 from cite_or_silence.chunk import chunk_entry
-from cite_or_silence import embed, evaluate, search
+from cite_or_silence import answer, embed, evaluate, provider, search
 from cite_or_silence.fetch import fetch_all
 from cite_or_silence import questions
 
@@ -59,6 +59,20 @@ def cmd_search(args) -> None:
     for chunk_id in search.search(con, args.query, vector, args.mode, args.k, scorer):
         heading, text = con.execute("SELECT heading, text FROM chunks WHERE id = ?", [chunk_id]).fetchone()
         print(f"{chunk_id}  [{heading}]\n    {text[:200]}...\n")
+
+
+def cmd_ask(args) -> None:
+    con = search.connect(DB)
+    vector = embed.encode(embed.load_model(), [args.question])[0]
+    passages = answer.passages_of(con, search.search(con, args.question, vector, "diverse", args.k))
+    llm = provider.get(args.provider)
+    result = answer.answer(args.question, passages, llm, llm)
+    print(f"({llm.name})\n\n{result.render()}")
+    dropped = [s for s in result.sentences if s.dropped]
+    if dropped:
+        print(f"\ndropped ({len(dropped)}):")
+        for s in dropped:
+            print(f"- {s.text} [{s.source}] -- {s.dropped}\n    quote: {s.quote}")
 
 
 def cmd_recall(args) -> None:
@@ -123,6 +137,11 @@ def main() -> None:
     se.add_argument("--mode", choices=search.MODES, default="hybrid")
     se.add_argument("-k", type=int, default=5)
     se.set_defaults(func=cmd_search)
+    ak = sub.add_parser("ask", help="answer a question with cited, verified sentences")
+    ak.add_argument("question")
+    ak.add_argument("--provider", choices=("codex", "ollama"), default="codex")
+    ak.add_argument("-k", type=int, default=10)
+    ak.set_defaults(func=cmd_ask)
     rc = sub.add_parser("recall", help="Recall@k of every search mode against eval/questions.jsonl")
     rc.add_argument("-k", type=int, default=5)
     rc.add_argument("--misses", nargs="?", const="rerank", choices=search.MODES, help="list the questions this mode misses (default: rerank)")
