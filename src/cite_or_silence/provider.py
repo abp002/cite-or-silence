@@ -47,21 +47,28 @@ class Codex:
 
 
 class Ollama:
-    """A local model through Ollama; the fallback that costs nothing and needs no login."""
+    """A local model through Ollama; the fallback that costs nothing and needs no login.
 
-    def __init__(self, model: str = "qwen3:14b", url: str = "http://localhost:11434", timeout: int = 600):
-        self.model, self.url, self.timeout = model, url, timeout
+    Ollama's default window is 4,096 tokens and it cuts longer prompts without saying so; judge
+    prompts run to ~7k. The window is set explicitly and a prompt that fills it raises.
+    """
+
+    def __init__(self, model: str = "qwen3:14b", url: str = "http://localhost:11434", timeout: int = 900, num_ctx: int = 16384):
+        self.model, self.url, self.timeout, self.num_ctx = model, url, timeout, num_ctx
         self.name = f"ollama:{model}"
 
     def complete(self, prompt: str, schema: dict) -> dict:
         r = httpx.post(
             f"{self.url}/api/chat",
             json={"model": self.model, "messages": [{"role": "user", "content": prompt}],
-                  "format": schema, "stream": False, "think": False, "options": {"temperature": 0}},
+                  "format": schema, "stream": False, "think": False, "options": {"temperature": 0, "num_ctx": self.num_ctx}},
             timeout=self.timeout,
         )  # fmt: skip
         r.raise_for_status()
-        return json.loads(r.json()["message"]["content"])
+        body = r.json()
+        if body.get("prompt_eval_count", 0) >= self.num_ctx:
+            raise RuntimeError(f"prompt filled the {self.num_ctx}-token window and was truncated")
+        return json.loads(body["message"]["content"])
 
 
 def get(name: str) -> Provider:
