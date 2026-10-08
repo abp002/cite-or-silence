@@ -93,7 +93,7 @@
 {"id": "n13", "type": "none", "subtype": "out_of_scope", "question": "¿Cuál era el plato favorito de Kant?", "gold": []}
 {"id": "n14", "type": "none", "subtype": "out_of_scope", "question": "¿Cómo refutó Aristóteles a Descartes?", "gold": []}
 {"id": "n15", "type": "none", "subtype": "out_of_scope", "question": "¿Qué filósofo griego inventó la imprenta?", "gold": []}
-{"id": "n16", "type": "none", "subtype": "near_miss", "question": "¿Qué es el problema del alineamiento de valores en la ética de la IA?", "gold": [], "note": "Sounds like SEP material, but no entry treats it (one passing mention in morality-definition)."}
+{"id": "n16", "type": "single", "question": "¿Qué es el problema del alineamiento de valores en la ética de la IA?", "gold": [{"entry": "ethics-ai", "anchor": "SupExiRis"}], "note": "Relabelled after the first bench run (gpt-6-luna, 2026-10-08): written as 'none' (near miss), but ethics-ai 2.8 defines the value alignment problem; the system answered it with verbatim quotes."}
 {"id": "f01", "type": "false_premise", "question": "¿Por qué Kant defendía el utilitarismo?", "gold": [{"entry": "kant-moral", "anchor": "TelDeo"}]}
 {"id": "f02", "type": "false_premise", "question": "¿Qué escribió Sócrates en su tratado sobre la virtud?", "gold": [{"entry": "socrates", "anchor": "ThrPriSouAriXenPla"}]}
 {"id": "f03", "type": "false_premise", "question": "¿Por qué Hume era racionalista?", "gold": [{"entry": "hume", "anchor": "PhilMind"}]}
