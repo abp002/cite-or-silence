@@ -21,7 +21,10 @@ _TRANSLATE = str.maketrans({"‘": "'", "’": "'", "“": '"', "”": '"', "–
 
 def normalize(text: str) -> str:
     text = unicodedata.normalize("NFKC", text).translate(_TRANSLATE).lower()
-    return re.sub(r"\s+", " ", text).strip().strip("\"'.,;: ")
+    text = re.sub(r"\\[()\[\]]", "", text)  # MathJax delimiters: the page shows F where the chunk has \(F\)
+    text = re.sub(r"\s+", " ", text)
+    text = re.sub(r" ([.,;:!?)])", r"\1", text)  # gap left by a removed footnote marker
+    return text.strip().strip("\"'.,;: ")
 
 
 def quote_in(quote: str, passage: str) -> bool:

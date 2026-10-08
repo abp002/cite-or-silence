@@ -66,3 +66,11 @@ def test_render_links_only_the_cited_passages():
                 Passage("y#Fro:0", "y", "Fro", "Frost", PASSAGES[1])]
     answer = Answer("¿?", passages, [Sentence("La escarcha es mensajera.", 2, "frost was a messenger of the")])
     assert answer.render() == "La escarcha es mensajera. [2]\n\n[2] https://plato.stanford.edu/entries/y/#Fro"
+
+
+def test_quote_matches_passage_text_with_mathjax_and_footnote_gaps():
+    # Regression: the model copies what the page shows; the chunk keeps MathJax delimiters and a
+    # space where a footnote marker was removed, so faithful quotes were dropped as "not found".
+    passage = r"The analysis says that ‘the \(F\) is \(G\)’ holds, as the keeper said of svabhāva . Then more."
+    assert quote_in("The analysis says that ‘the F is G’ holds", passage)
+    assert quote_in("as the keeper said of svabhāva. Then more", passage)
