@@ -92,8 +92,13 @@ def answer_prompt(question: str, passages: list[Passage]) -> str:
     )
 
 
-def answer(question: str, passages: list[Passage], model: Provider, judge: Provider) -> Answer:
+def draft(question: str, passages: list[Passage], model: Provider) -> list[Sentence]:
+    """The model's answer before verification: every sentence with its passage and quote."""
     raw = model.complete(answer_prompt(question, passages), ANSWER_SCHEMA)["sentences"]
-    sentences = [Sentence(s["text"], s["source"], s["quote"]) for s in raw]
+    return [Sentence(s["text"], s["source"], s["quote"]) for s in raw]
+
+
+def answer(question: str, passages: list[Passage], model: Provider, judge: Provider) -> Answer:
+    sentences = draft(question, passages, model)
     verify(sentences, [p.text for p in passages], judge)
     return Answer(question, passages, sentences)

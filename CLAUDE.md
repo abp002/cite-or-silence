@@ -55,6 +55,13 @@ Test fixtures use invented text that only mimics SEP markup.
   arms under shuffled letters: none -> abstains; false_premise -> corrects; single/multi -> each
   sentence against the gold sections + the retrieved passages (supported / contradicted / unbacked).
   Rules fixed before the first run. Results in `data/bench/<provider>/<qid>.json`, resumable.
+- `serve`: local demo page on 127.0.0.1:8765 only (it shows SEP text). Stdlib `http.server`; each step
+  (passages, draft, verdicts, done) reaches the page as a server-sent event, which is why `answer.draft`
+  and `verify` are called separately there. The page is `src/cite_or_silence/web.html` (no external
+  dependencies, read on every request). Complete answers are saved in `data/serve/<provider>.json` and
+  replayed for a question asked before, so a recorded demo stays repeatable; Shift+Enter or `fresh=1`
+  asks the model again. The page's look: a printer's proof (draft in proof blue, kept sentences inked,
+  struck ones crossed in red, quotes in the margin).
 - Known limit: a sentence about the question itself ("the premise is wrong") has no quote to back it,
   so verification drops the explicit correction of a false premise.
 
@@ -78,4 +85,5 @@ The README must say which model produced each number.
 - `uv run cite-or-silence search "question" [--mode dense|bm25|hybrid] [-k 5]`
 - `uv run cite-or-silence recall [-k 5] [--misses MODE]`
 - `uv run cite-or-silence ask "question" [--provider codex|ollama] [-k 10]`
+- `uv run cite-or-silence serve [--provider codex|ollama] [--port 8765]`
 - `uv run cite-or-silence bench [--ids s01,m02] [--limit N] [--provider codex|ollama]` (~1 h for all)

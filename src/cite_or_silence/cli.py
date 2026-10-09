@@ -4,7 +4,7 @@ import statistics
 from pathlib import Path
 
 from cite_or_silence.chunk import chunk_entry
-from cite_or_silence import answer, bench, embed, evaluate, provider, search
+from cite_or_silence import answer, bench, embed, evaluate, provider, search, web
 from cite_or_silence.fetch import fetch_all
 from cite_or_silence import questions
 
@@ -61,10 +61,20 @@ def cmd_search(args) -> None:
         print(f"{chunk_id}  [{heading}]\n    {text[:200]}...\n")
 
 
+def retriever(con, k: int = 10):
+    """Production retrieval: diverse search, k passages per question."""
+    model = embed.load_model()
+
+    def retrieve(question: str) -> list[answer.Passage]:
+        vector = embed.encode(model, [question])[0]
+        return answer.passages_of(con, search.search(con, question, vector, "diverse", k))
+
+    return retrieve
+
+
 def cmd_ask(args) -> None:
     con = search.connect(DB, read_only=True)
-    vector = embed.encode(embed.load_model(), [args.question])[0]
-    passages = answer.passages_of(con, search.search(con, args.question, vector, "diverse", args.k))
+    passages = retriever(con, args.k)(args.question)
     llm = provider.get(args.provider)
     result = answer.answer(args.question, passages, llm, llm)
     print(f"({llm.name})\n\n{result.render()}")
@@ -77,13 +87,8 @@ def cmd_ask(args) -> None:
 
 def cmd_bench(args) -> None:
     con = search.connect(DB, read_only=True)
-    model = embed.load_model()
+    retrieve = retriever(con)
     llm = provider.get(args.provider)
-
-    def retrieve(question):
-        vector = embed.encode(model, [question])[0]
-        return answer.passages_of(con, search.search(con, question, vector, "diverse", 10))
-
     asked = questions.load(QUESTIONS)
     if args.ids:
         asked = [q for q in asked if q["id"] in args.ids.split(",")]
@@ -91,6 +96,15 @@ def cmd_bench(args) -> None:
     results = bench.run(con, asked, retrieve, llm, out, args.limit, log=lambda m: print(m, flush=True))
     print(f"\n{len(results)} questions in {out} ({llm.name})\n")
     print(bench.report(results))
+
+
+def cmd_serve(args) -> None:
+    con = search.connect(DB, read_only=True)
+    retrieve = retriever(con, args.k)
+    retrieve("warm-up")  # loads the embedding model now, not on the first question
+    llm = provider.get(args.provider)
+    saved = DATA / "serve" / f"{llm.name.replace(':', '_')}.json"
+    web.serve(web.Session(retrieve, llm, web.describer(con, RAW), saved), args.port)
 
 
 def cmd_recall(args) -> None:
@@ -165,6 +179,11 @@ def main() -> None:
     bn.add_argument("--ids", help="comma-separated question ids to run")
     bn.add_argument("--limit", type=int, help="run at most N new questions")
     bn.set_defaults(func=cmd_bench)
+    sv = sub.add_parser("serve", help="local page to ask questions and watch each sentence get verified")
+    sv.add_argument("--provider", choices=("codex", "ollama"), default="codex")
+    sv.add_argument("--port", type=int, default=8765)
+    sv.add_argument("-k", type=int, default=10)
+    sv.set_defaults(func=cmd_serve)
     rc = sub.add_parser("recall", help="Recall@k of every search mode against eval/questions.jsonl")
     rc.add_argument("-k", type=int, default=5)
     rc.add_argument("--misses", nargs="?", const="rerank", choices=search.MODES, help="list the questions this mode misses (default: rerank)")

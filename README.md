@@ -96,7 +96,12 @@ uv sync
 uv run cite-or-silence fetch      # ~2.5 h, once
 uv run cite-or-silence chunk
 uv run pytest
+uv run cite-or-silence serve      # http://127.0.0.1:8765: ask, and watch each sentence get checked
 ```
+
+The page shows the passages retrieval found, the model's draft with a quote beside every sentence,
+and verification keeping or striking each one. It only listens on your machine: it shows SEP text,
+which may be read but not republished.
 
 ## About the SEP text
 

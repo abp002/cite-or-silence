@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cite-or-silence</title>
+<style>
+/* A printer's proof: the draft comes in proof blue, what its quote backs goes to black ink,
+   and the corrector strikes the rest in red with the reason in the margin. */
+:root {
+  --paper: #f3f5f4;
+  --sheet: #ffffff;
+  --ink: #1a1c1e;
+  --graphite: #5f666d;
+  --rule: #d9dee2;
+  --blueline: #2c6496;
+  --blueline-wash: rgba(44, 100, 150, .1);
+  --red: #c0262d;
+  --serif: "Iowan Old Style", Charter, Palatino, Georgia, serif;
+  --sans: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --measure: 34rem;
+  --pad: 2.5rem;
+  --gutter: 2.25rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #121517;
+    --sheet: #1a1e21;
+    --ink: #e9ecee;
+    --graphite: #9ba3aa;
+    --rule: #2f363c;
+    --blueline: #8db8e3;
+    --blueline-wash: rgba(141, 184, 227, .12);
+    --red: #f07178;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 18px/1.6 var(--serif);
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid var(--blueline); outline-offset: 3px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.page { max-width: 62rem; margin: 0 auto; padding: 2.75rem 1.5rem 4rem; }
+
+.wordmark { margin: 0; font-size: 2.25rem; line-height: 1.1; font-weight: 700; letter-spacing: -.015em; }
+.lede { max-width: var(--measure); margin: .75rem 0 0; color: var(--graphite); font-size: 1.05rem; line-height: 1.55; }
+
+.ask { display: flex; gap: .9rem; align-items: flex-end; max-width: 46rem; margin-top: 2rem; }
+.ask input {
+  flex: 1; min-width: 0; padding: .35rem 0;
+  font: inherit; font-size: 1.3rem; color: var(--ink);
+  background: transparent; border: 0; border-bottom: 2px solid var(--ink); border-radius: 0;
+}
+.ask input::placeholder { color: var(--graphite); opacity: .75; }
+.ask input:focus-visible { outline: none; border-bottom-color: var(--blueline); }
+.ask button {
+  padding: .8rem 1.25rem; cursor: pointer;
+  font: 600 .95rem/1 var(--sans); color: var(--sheet);
+  background: var(--ink); border: 0; border-radius: 3px;
+}
+.examples {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem 1rem;
+  margin: 1rem 0 0; font: .85rem/1.4 var(--sans); color: var(--graphite);
+}
+.example {
+  padding: 0; cursor: pointer; font: inherit; color: var(--ink); background: none; border: 0;
+  text-decoration: underline 1.5px var(--rule); text-underline-offset: .25em;
+}
+.example:hover { text-decoration-color: var(--blueline); }
+
+.steps {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem;
+  margin: 2.5rem 0 0; padding: 0; list-style: none; counter-reset: step; font-family: var(--sans);
+  scroll-margin-top: 1.25rem;
+}
+.steps li {
+  counter-increment: step; display: grid; grid-template-columns: auto 1fr; column-gap: .7rem;
+  align-items: center; color: var(--graphite);
+}
+.steps .dot {
+  grid-row: span 2; display: grid; place-items: center; width: 1.8rem; height: 1.8rem;
+  border: 1.5px solid var(--rule); border-radius: 50%; font-size: .8rem; font-weight: 600;
+}
+.steps .dot::before { content: counter(step); }
+.steps .name { font-size: .92rem; font-weight: 600; line-height: 1.3; }
+.steps .detail { min-height: 1.3em; font-size: .82rem; line-height: 1.3; font-variant-numeric: tabular-nums; }
+.steps li[data-state="active"], .steps li[data-state="done"] { color: var(--ink); }
+.steps li[data-state="active"] .dot { border-color: var(--blueline); color: var(--blueline); animation: pulse 1.4s ease-out infinite; }
+.steps li[data-state="done"] .dot { background: var(--ink); border-color: var(--ink); color: var(--sheet); }
+.steps li[data-state="done"] .dot::before { content: "✓"; }
+.steps li[data-state="failed"] .dot { border-color: var(--red); color: var(--red); }
+@keyframes pulse {
+  from { box-shadow: 0 0 0 0 var(--blueline-wash), 0 0 0 0 var(--blueline); }
+  to { box-shadow: 0 0 0 .55rem transparent, 0 0 0 0 transparent; }
+}
+
+.sources { margin-top: 1.6rem; font-family: var(--sans); }
+.sources h2 { margin: 0 0 .55rem; font-size: .82rem; font-weight: 600; color: var(--graphite); }
+.sources ol {
+  columns: 2; column-gap: 2rem;
+  margin: 0; padding: 0; list-style: none; font-size: .8rem; line-height: 1.45;
+}
+.sources li { display: flex; gap: .55rem; min-width: 0; padding: .12rem 0; break-inside: avoid; color: var(--graphite); transition: color .4s; }
+.sources .n { flex: none; width: 1.2rem; text-align: right; font-variant-numeric: tabular-nums; }
+.sources a { min-width: 0; overflow: hidden; color: inherit; text-decoration: none; white-space: nowrap; text-overflow: ellipsis; }
+.sources a:hover { text-decoration: underline; }
+.sources li.cited { color: var(--ink); }
+.sources li.cited .n { color: var(--blueline); font-weight: 700; }
+
+/* The sheet holds the answer; the quotes sit outside it, in the margin. */
+.proof { position: relative; margin-top: 1.8rem; padding: 2.1rem 0 2.25rem; }
+.proof::before {
+  content: ""; position: absolute; inset: 0 auto 0 0; width: calc(var(--measure) + 2 * var(--pad));
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 3px;
+}
+.proof > * { position: relative; }
+.question, .key, .silence { max-width: calc(var(--measure) + 2 * var(--pad)); padding: 0 var(--pad); }
+.question { margin: 0; font-size: 1.45rem; line-height: 1.3; font-weight: 600; }
+.key { margin: .45rem 0 1.6rem; font: .8rem/1.45 var(--sans); color: var(--graphite); }
+.key .swatch { color: var(--blueline); font-weight: 600; }
+
+.line {
+  position: relative; display: grid; grid-template-columns: var(--measure) minmax(0, 1fr);
+  column-gap: calc(var(--pad) + var(--gutter)); align-items: start; padding-left: var(--pad);
+}
+.mark { position: absolute; top: .45rem; left: calc(var(--pad) - 1.8rem); width: 1.25rem; height: 1.25rem; color: var(--ink); }
+.mark svg { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.mark path { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset .5s ease; }
+.line[data-state="kept"] .mark path, .line[data-state="dropped"] .mark path { stroke-dashoffset: 0; }
+.line[data-state="dropped"] .mark { color: var(--red); }
+.line[data-state="dropped"] .mark path { transition-delay: .55s; }
+.line + .line { margin-top: 1.35rem; }
+.claim { margin: 0 -.45rem; padding: .05rem .45rem; font-size: 1.12rem; line-height: 1.6; border-radius: 3px; transition: background-color .3s; }
+.claim .text {
+  color: var(--blueline);
+  background-image: linear-gradient(var(--red), var(--red));
+  background-repeat: no-repeat; background-position: 0 62%; background-size: 0 2px;
+  transition: color .7s ease;
+}
+.claim .ref { margin-left: .15em; font: 700 .62em/0 var(--sans); color: var(--blueline); transition: color .7s ease; }
+.line[data-state="checking"] .claim { background-color: var(--blueline-wash); }
+.line[data-state="kept"] .text, .line[data-state="kept"] .ref { color: var(--ink); }
+.line[data-state="dropped"] .text {
+  color: var(--graphite); background-size: 100% 2px;
+  transition: background-size .8s cubic-bezier(.65, 0, .35, 1), color .6s ease .35s;
+}
+.line[data-state="dropped"] .ref { color: var(--graphite); }
+
+.note { padding-top: .2rem; font-size: .88rem; line-height: 1.5; color: var(--graphite); }
+.note blockquote { margin: 0; font-style: italic; hyphens: auto; }
+.note .where {
+  display: inline-block; margin-top: .3rem; font: .76rem/1.4 var(--sans); color: var(--graphite);
+  text-decoration: underline 1px var(--rule); text-underline-offset: .2em;
+}
+.note .where:hover { color: var(--ink); text-decoration-color: currentColor; }
+.reason { margin: .3rem 0 0; font: 600 .82rem/1.4 var(--sans); color: var(--red); opacity: 0; transition: opacity .4s ease .7s; }
+.line[data-state="dropped"] .reason { opacity: 1; }
+
+.silence { margin-top: 1.1rem; }
+.lines:not(:empty) + .silence { margin-top: 2rem; padding-top: 1.4rem; border-top: 1px solid var(--rule); }
+.silence p { margin: 0; }
+.silence .verdict-line { font-size: 1.5rem; line-height: 1.3; }
+.silence .why { margin-top: .5rem; font: .85rem/1.45 var(--sans); color: var(--graphite); }
+
+.failure { max-width: 46rem; margin: 1.5rem 0 0; font: .9rem/1.5 var(--sans); color: var(--red); }
+.colophon { margin-top: 3.5rem; font: .78rem/1.5 var(--sans); color: var(--graphite); }
+
+@media (max-width: 60rem) {
+  :root { --pad: 1.25rem; }
+  .proof::before { width: 100%; }
+  .question, .key, .silence { max-width: none; }
+  .line { grid-template-columns: minmax(0, 1fr); padding: 0 var(--pad) 0 calc(var(--pad) + 1.5rem); }
+  .mark { left: calc(var(--pad) - .1rem); }
+  .note { margin-top: .45rem; padding: 0 0 0 .85rem; border-left: 2px solid var(--rule); }
+}
+@media (max-width: 40rem) {
+  .page { padding-top: 2.25rem; }
+  .ask { flex-direction: column; align-items: stretch; }
+  .steps { grid-template-columns: minmax(0, 1fr); gap: .8rem; }
+  .sources ol { columns: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+  <header>
+    <h1 class="wordmark">cite-or-silence</h1>
+    <p class="lede">Respuestas de filosofía sacadas solo de la Stanford Encyclopedia of Philosophy. Cada frase trae su cita; si la cita no la respalda, se tacha. Si no queda ninguna, silencio.</p>
+  </header>
+
+  <form class="ask" id="ask" autocomplete="off">
+    <label class="sr-only" for="q">Pregunta</label>
+    <input id="q" name="q" type="text" placeholder="Escribe una pregunta de filosofía" required>
+    <button type="submit">Preguntar</button>
+  </form>
+  <p class="examples">
+    <span>Prueba con</span>
+    <button type="button" class="example">¿Qué ilustra la alegoría de la caverna de Platón?</button>
+    <button type="button" class="example">¿Qué es la suerte moral según Williams y Nagel?</button>
+    <button type="button" class="example">¿Qué opinaba Platón de los smartphones?</button>
+  </p>
+
+  <ol class="steps" id="steps" aria-live="polite" hidden>
+    <li data-step="search"><span class="dot" aria-hidden="true"></span><span class="name">Buscar en la SEP</span><span class="detail"></span></li>
+    <li data-step="draft"><span class="dot" aria-hidden="true"></span><span class="name">Redactar con citas</span><span class="detail"></span></li>
+    <li data-step="verify"><span class="dot" aria-hidden="true"></span><span class="name">Comprobar cada cita</span><span class="detail"></span></li>
+  </ol>
+
+  <section class="sources" id="sources" hidden>
+    <h2>Pasajes que ha encontrado la búsqueda</h2>
+    <ol id="source-list"></ol>
+  </section>
+
+  <article class="proof" id="proof" hidden>
+    <h2 class="question" id="question"></h2>
+    <p class="key" id="key" hidden>En <span class="swatch">azul</span>, el borrador. Lo que su cita respalda se pasa a tinta; lo demás se tacha.</p>
+    <div class="lines" id="lines"></div>
+    <div class="silence" id="silence" hidden>
+      <p class="verdict-line">La SEP no cubre esta pregunta.</p>
+      <p class="why" id="silence-why"></p>
+    </div>
+  </article>
+
+  <p class="failure" id="failure" role="alert" hidden></p>
+
+  <footer class="colophon">Responde __MODEL__ con los diez pasajes de la SEP que encuentra la búsqueda. Las citas enlazan a la sección de la enciclopedia de la que salen.</footer>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const form = $('ask'), input = $('q'), stepList = $('steps'), sources = $('sources'), sourceList = $('source-list');
+const proof = $('proof'), question = $('question'), key = $('key'), lines = $('lines');
+const silence = $('silence'), silenceWhy = $('silence-why'), failure = $('failure');
+
+const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep = (ms) => new Promise((done) => setTimeout(done, calm ? 0 : ms));
+const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+const REASONS = {
+  'quote does not support the sentence': 'La cita no respalda esta frase.',
+  'quote not found in the cited passage': 'La cita no aparece en el pasaje que dice citar.',
+  'cites a passage that was not given': 'Cita un pasaje que la búsqueda no encontró.',
+};
+const CHECK = '<path pathLength="1" d="M4.5 12.5l5 5L19.5 6"/>';
+const CROSS = '<path pathLength="1" d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>';
+const WORKING = { search: 'Buscando', draft: 'Redactando', verify: 'Comprobando' };
+
+let run = 0, source = null, queue = Promise.resolve(), clock = null, again = false;
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+function step(name, state, detail = '') {
+  clearInterval(clock);
+  const li = stepList.querySelector(`[data-step="${name}"]`);
+  const out = li.querySelector('.detail');
+  li.dataset.state = state;
+  out.textContent = detail;
+  if (state === 'active') {
+    const started = Date.now();
+    const tick = () => { out.textContent = `${WORKING[name]}… ${Math.floor((Date.now() - started) / 1000)} s`; };
+    tick();
+    clock = setInterval(tick, 1000);
+  }
+}
+
+function where(p) {
+  const section = p.section && p.heading ? `§${p.section} ${p.heading}` : p.heading;
+  return section ? `${p.title}, ${section}` : p.title;
+}
+
+function sourceItem(p, n, repeated) {
+  const li = el('li');
+  li.id = `source-${n}`;
+  const link = el('a', '', where(p) + (repeated ? ', otro fragmento' : ''));
+  link.href = p.url;
+  link.target = '_blank';
+  link.rel = 'noreferrer';
+  link.title = link.textContent;
+  li.append(el('span', 'n', String(n)), link);
+  return li;
+}
+
+function lineItem(s, p) {
+  const line = el('div', 'line');
+  line.dataset.state = 'draft';
+  const mark = el('span', 'mark');
+  mark.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"></svg>';
+  const claim = el('p', 'claim');
+  claim.append(el('span', 'text', s.text), el('sup', 'ref', String(s.source)), el('span', 'sr-only state'));
+  const body = el('div', 'body');
+  const reason = el('p', 'reason');
+  reason.hidden = true;
+  body.append(claim, reason);
+  const note = el('aside', 'note');
+  const quote = el('blockquote', '', `“${s.quote}”`);
+  quote.lang = 'en';
+  note.append(quote);
+  if (p) {
+    const link = el('a', 'where', where(p));
+    link.href = p.url;
+    link.target = '_blank';
+    link.rel = 'noreferrer';
+    note.append(link);
+  }
+  line.append(mark, body, note);
+  return line;
+}
+
+function decide(line, why) {
+  const said = why ? (REASONS[why] || why) : '';
+  line.querySelector('.mark svg').innerHTML = why ? CROSS : CHECK;
+  line.querySelector('.state').textContent = why ? ` Tachada: ${said}` : ' Respaldada por su cita.';
+  const reason = line.querySelector('.reason');
+  reason.textContent = said;
+  reason.hidden = !why;
+  void line.offsetWidth;  // lay the mark out undrawn first, so its stroke animates in
+  line.dataset.state = why ? 'dropped' : 'kept';
+}
+
+function fail(message) {
+  const active = stepList.querySelector('[data-state="active"]');
+  if (active) step(active.dataset.step, 'failed', 'Falló');
+  failure.textContent = `No se pudo responder (${message}). Pulsa Preguntar para intentarlo otra vez.`;
+  failure.hidden = false;
+}
+
+function ask(text, fresh) {
+  const asked = text.trim();
+  if (!asked) return;
+  const id = ++run;
+  if (source) source.close();
+  input.value = asked;
+  history.replaceState(null, '', `?q=${encodeURIComponent(asked)}`);
+
+  for (const li of stepList.children) step(li.dataset.step, 'waiting');
+  stepList.hidden = false;
+  sources.hidden = true;
+  sourceList.replaceChildren();
+  proof.hidden = true;
+  question.textContent = asked;
+  key.hidden = true;
+  lines.replaceChildren();
+  silence.hidden = true;
+  failure.hidden = true;
+  step('search', 'active');
+
+  let passages = [], drafted = [];
+  queue = Promise.resolve();
+  source = new EventSource(`/ask?q=${encodeURIComponent(asked)}${fresh ? '&fresh=1' : ''}`);
+  const on = (name, handle) => source.addEventListener(name, (e) => {
+    if (name === 'done' || name === 'failed') source.close();  // otherwise EventSource reconnects and asks again
+    const data = JSON.parse(e.data);
+    queue = queue.then(() => (id === run ? handle(data) : undefined));
+  });
+
+  on('passages', async (d) => {
+    passages = d.passages;
+    sourceList.replaceChildren(...passages.map((p, i) => sourceItem(p, i + 1, passages.slice(0, i).some((q) => q.url === p.url))));
+    sources.hidden = false;
+    step('search', 'done', count(passages.length, 'pasaje', 'pasajes'));
+    step('draft', 'active');
+    await sleep(500);
+  });
+
+  on('draft', async (d) => {
+    drafted = d.sentences;
+    step('draft', 'done', count(drafted.length, 'frase', 'frases'));
+    proof.hidden = false;
+    stepList.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
+    if (!drafted.length) return;
+    lines.replaceChildren(...drafted.map((s) => lineItem(s, passages[s.source - 1])));
+    key.hidden = false;
+    step('verify', 'active');
+    await sleep(1100);
+  });
+
+  on('verdicts', async (d) => {
+    const shown = [...lines.children];
+    for (const [i, why] of d.dropped.entries()) {
+      shown[i].dataset.state = 'checking';
+      await sleep(450);
+      if (id !== run) return;
+      decide(shown[i], why);
+      await sleep(why ? 700 : 350);
+    }
+    const kept = d.dropped.filter((why) => !why).length;
+    const struck = d.dropped.length - kept;
+    const parts = [kept && count(kept, 'respaldada', 'respaldadas'), struck && count(struck, 'tachada', 'tachadas')];
+    step('verify', 'done', parts.filter(Boolean).join(', ') || 'Nada que comprobar');
+  });
+
+  on('done', (d) => {
+    drafted.forEach((s, i) => {
+      if (lines.children[i]?.dataset.state === 'kept') $(`source-${s.source}`)?.classList.add('cited');
+    });
+    if (d.silent) {
+      silenceWhy.textContent = drafted.length
+        ? 'Ninguna frase ha pasado la comprobación de citas, así que no se afirma nada.'
+        : 'Los pasajes que ha encontrado la búsqueda no responden a la pregunta.';
+      silence.hidden = false;
+    }
+  });
+
+  on('failed', (d) => fail(d.message));
+
+  source.addEventListener('error', () => {
+    if (id !== run || source.readyState === EventSource.CLOSED) return;
+    source.close();
+    queue = queue.then(() => fail('se ha cortado la conexión con cite-or-silence serve'));
+  });
+}
+
+// Shift+Enter or Shift+click asks the model again instead of replaying the answer from this session.
+addEventListener('keydown', (e) => { again = e.shiftKey; }, true);
+addEventListener('pointerdown', (e) => { again = e.shiftKey; }, true);
+form.addEventListener('submit', (e) => { e.preventDefault(); ask(input.value, again); });
+for (const example of document.querySelectorAll('.example')) {
+  example.addEventListener('click', (e) => ask(example.textContent, e.shiftKey));
+}
+
+const params = new URLSearchParams(location.search);
+if (params.get('q')) ask(params.get('q'), params.has('fresh'));
+else input.focus();
+</script>
+</body>
+</html>
