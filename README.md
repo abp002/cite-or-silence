@@ -31,15 +31,14 @@ gist of a passage but drop who said it ("possible worlds are…" for what the pa
 view) or widen its scope ("contemporary feminists" for "pragmatist and continental feminists").
 
 **A human without philosophy training** reviewed 20 of them and accepted 19, including five that
-both the judge and the second model rejected; one of those states the reverse of the passage it cites.
+both the judge and the second model rejected.
 Where a sentence came with a citation, the citation looked right, and it was: the model had found
-the right passage and then stretched it when writing the sentence. A first round of 20 was discarded because the review page
-did not make clear that the sentence, not the quote, was being graded.
+the right passage and then stretched it when writing the sentence.
 
 So showing the reader a citation is not enough: a correct quote under a sentence it does not support
 reads as proof. That is what verification is for. Run on the 64 reviewed sentences that carried a
 quote, the verification judge (codex:gpt-6-luna:low) dropped 4–5 of the 6 the second model found
-unbacked, including the reversed one, and wrongly dropped 7 of 53 that both reviewers found supported.
+unbacked and wrongly dropped 7 of 53 that both reviewers found supported.
 A stricter verification prompt (also reject dropped attributions, widened scope, reversed
 explanations) caught no more bad sentences and dropped 12 good ones, so it was not adopted.
 `scripts/verifier_cases.py` reruns this check.
