@@ -50,10 +50,15 @@ class Ollama:
     """A local model through Ollama; the fallback that costs nothing and needs no login.
 
     Ollama's default window is 4,096 tokens and it cuts longer prompts without saying so; judge
-    prompts run to ~7k. The window is set explicitly and a prompt that fills it raises.
+    prompts run to ~7k, some bench judge prompts to ~18k. The window is set explicitly and
+    `truncate: false` makes Ollama refuse a prompt that does not fit instead of cutting it.
+
+    The model is unloaded after every call (`keep_alive: 0`): over a day-long bench the runner
+    grew from 11 to 19 GB, the Mac ran out of memory and panicked (2026-10-09). Reloading
+    costs ~7 s per call.
     """
 
-    def __init__(self, model: str = "qwen3:14b", url: str = "http://localhost:11434", timeout: int = 900, num_ctx: int = 16384):
+    def __init__(self, model: str = "qwen3:14b", url: str = "http://localhost:11434", timeout: int = 900, num_ctx: int = 24576):
         self.model, self.url, self.timeout, self.num_ctx = model, url, timeout, num_ctx
         self.name = f"ollama:{model}"
 
@@ -61,14 +66,13 @@ class Ollama:
         r = httpx.post(
             f"{self.url}/api/chat",
             json={"model": self.model, "messages": [{"role": "user", "content": prompt}],
-                  "format": schema, "stream": False, "think": False, "options": {"temperature": 0, "num_ctx": self.num_ctx}},
+                  "format": schema, "stream": False, "think": False, "truncate": False, "keep_alive": 0,
+                  "options": {"temperature": 0, "num_ctx": self.num_ctx}},
             timeout=self.timeout,
         )  # fmt: skip
-        r.raise_for_status()
-        body = r.json()
-        if body.get("prompt_eval_count", 0) >= self.num_ctx:
-            raise RuntimeError(f"prompt filled the {self.num_ctx}-token window and was truncated")
-        return json.loads(body["message"]["content"])
+        if r.is_error:
+            raise RuntimeError(f"ollama {r.status_code}: {r.text[:300]}")
+        return json.loads(r.json()["message"]["content"])
 
 
 def get(name: str) -> Provider:
