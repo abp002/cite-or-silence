@@ -34,13 +34,14 @@ for n, i in enumerate(picked, 1):
     if it["arm"] != "bare":
         s = next((s for s in r["sentences"] if s["text"] == it["sentence"]), None)
         if s:
-            quote = f'<div class="quote">Cita que dio el modelo: «{html.escape(s["quote"])}»</div>'
+            quote = f'<div class="quote"><span class="lbl">Cita que dio el modelo: es su prueba, no se juzga</span><br>«{html.escape(s["quote"])}»</div>'
     gold = bench.gold_text(con, q["gold"])
     retrieved = passages_of(con, r["passages"])
     cards.append(f"""
 <section data-item="{i}">
   <div class="n">{n} / {len(picked)}</div>
   <div class="q">Pregunta: {html.escape(q["question"])}</div>
+  <div class="lbl">Frase a juzgar</div>
   <div class="s">{html.escape(it["sentence"])}</div>
   {quote}
   <div class="opts">
@@ -60,7 +61,8 @@ body{{background:var(--bg);color:var(--fg);font:16px/1.55 Georgia,serif;max-widt
 h1{{font-size:1.4rem}} .intro{{color:var(--mute)}}
 section{{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin:22px 0}}
 .n{{color:var(--mute);font-size:.85rem}} .q{{color:var(--mute);margin:.3em 0}}
-.s{{font-size:1.15rem;font-weight:600;margin:.6em 0}}
+.s{{font-size:1.15rem;font-weight:600;margin:.2em 0 .6em}}
+.lbl{{color:var(--mute);font:600 .75rem system-ui,sans-serif;text-transform:uppercase;letter-spacing:.04em}}
 .quote{{background:var(--hl);padding:8px 10px;border-radius:6px;font-size:.95rem}}
 .opts{{display:flex;gap:18px;flex-wrap:wrap;margin:14px 0;font-family:system-ui,sans-serif}}
 details{{margin-top:8px}} summary{{cursor:pointer;color:var(--acc);font-family:system-ui,sans-serif}}
@@ -69,7 +71,7 @@ footer{{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top
 button{{background:var(--acc);color:var(--bg);border:0;border-radius:6px;padding:8px 16px;font-size:1rem;cursor:pointer}}
 </style></head><body>
 <h1>Revisión del juez</h1>
-<p class="intro">Para cada frase, decide contra el texto de la SEP de abajo (no contra lo que sepas): <b>Respaldada</b> si el texto lo dice o lo implica directamente, todo, sin añadir nombres, causas ni matices; <b>Sin respaldo</b> si el texto no lo zanja; <b>Contradicha</b> si dice lo contrario. Ctrl+F ayuda a buscar en los pasajes.</p>
+<p class="intro">Se juzga solo la <b>frase</b>: no si responde bien a la pregunta, ni si la cita es buena. Si la frase dice más que el texto (quita un «según X», un «algunos», un grupo concreto), no está respaldada. Decide contra el texto de la SEP de abajo (no contra lo que sepas): <b>Respaldada</b> si el texto lo dice o lo implica directamente, todo, sin añadir nombres, causas ni matices; <b>Sin respaldo</b> si el texto no lo zanja; <b>Contradicha</b> si dice lo contrario. Ctrl+F ayuda a buscar en los pasajes.</p>
 {"".join(cards)}
 <footer><span id="count">0 / {len(picked)}</span><button id="save">Guardar resultados</button></footer>
 <script>
