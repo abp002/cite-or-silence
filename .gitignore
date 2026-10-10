@@ -4,3 +4,4 @@ __pycache__/
 .pytest_cache/
 # SEP text may be crawled for indexing but not redistributed: nothing derived from it is committed.
 data/
+site/

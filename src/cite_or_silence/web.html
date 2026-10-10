@@ -4,258 +4,510 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>cite-or-silence</title>
+<link rel="icon" type="image/svg+xml" href="static/favicon.svg">
 <style>
-/* A printer's proof: the draft comes in proof blue, what its quote backs goes to black ink,
-   and the corrector strikes the rest in red with the reason in the margin. */
+/* A reading room at night. The draft comes in faint ink, every sentence tied by a thread to the
+   passage it cites. Checking pulls each thread: brass when the quote backs the sentence, which then
+   inks in; red when it does not, and the sentence is struck. If nothing is left, the lamp goes out. */
 :root {
-  --paper: #f3f5f4;
-  --sheet: #ffffff;
-  --ink: #1a1c1e;
-  --graphite: #5f666d;
-  --rule: #d9dee2;
-  --blueline: #2c6496;
-  --blueline-wash: rgba(44, 100, 150, .1);
-  --red: #c0262d;
-  --serif: "Iowan Old Style", Charter, Palatino, Georgia, serif;
-  --sans: "Avenir Next", "Segoe UI", system-ui, sans-serif;
-  --measure: 34rem;
-  --pad: 2.5rem;
-  --gutter: 2.25rem;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #121517;
-    --sheet: #1a1e21;
-    --ink: #e9ecee;
-    --graphite: #9ba3aa;
-    --rule: #2f363c;
-    --blueline: #8db8e3;
-    --blueline-wash: rgba(141, 184, 227, .12);
-    --red: #f07178;
-  }
+  --night: #0f221c;
+  --desk: #173229;
+  --rule: #2a4b40;
+  --sage: #8da399;
+  --faded: #5f766c;
+  --paper: #f1e8d6;
+  --brass: #d9a646;
+  --brass-glow: rgba(217, 166, 70, .3);
+  --red: #e5573f;
+  --red-text: #f2846e;
+  --display: "Big Caslon", "Hoefler Text", Baskerville, Georgia, serif;
+  --serif: "Hoefler Text", Baskerville, Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ease: cubic-bezier(.6, 0, .2, 1);
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html { -webkit-text-size-adjust: 100%; }
+html { color-scheme: dark; font-size: clamp(15px, .55vw + 7.5px, 19px); -webkit-text-size-adjust: 100%; }
 body {
-  margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font: 18px/1.6 var(--serif);
+  margin: 0; min-height: 100vh;
+  background: var(--night); color: var(--paper);
+  font: 1rem/1.55 var(--sans);
   -webkit-font-smoothing: antialiased;
 }
-:focus-visible { outline: 2px solid var(--blueline); outline-offset: 3px; }
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(60rem 40rem at 22% -12%, rgba(217, 166, 70, .1), transparent 70%);
+  transition: opacity 1.8s ease;
+}
+body.silent::before { opacity: 0; }
+.instant, .instant * { transition: none !important; }
+:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; border-radius: 4px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-.page { max-width: 62rem; margin: 0 auto; padding: 2.75rem 1.5rem 4rem; }
-
-.wordmark { margin: 0; font-size: 2.25rem; line-height: 1.1; font-weight: 700; letter-spacing: -.015em; }
-.lede { max-width: var(--measure); margin: .75rem 0 0; color: var(--graphite); font-size: 1.05rem; line-height: 1.55; }
-
-.ask { display: flex; gap: .9rem; align-items: flex-end; max-width: 46rem; margin-top: 2rem; }
-.ask input {
-  flex: 1; min-width: 0; padding: .35rem 0;
-  font: inherit; font-size: 1.3rem; color: var(--ink);
-  background: transparent; border: 0; border-bottom: 2px solid var(--ink); border-radius: 0;
+.page { display: flex; flex-direction: column; min-height: 100vh; max-width: 80rem; margin: 0 auto; padding: 1.8rem 4rem 2rem; }
+/* The logo stays small in the corner and names the page; the headline says what it promises. */
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem 2rem; }
+.nav { display: flex; align-items: center; gap: .9rem; font: 500 .92rem/1 var(--sans); }
+.nav a { color: var(--sage); text-decoration: none; transition: color .2s; }
+.nav a:hover { color: var(--paper); }
+.nav .icon { display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 6px; }
+.nav .icon svg { width: 1.2rem; height: 1.2rem; }
+.langs { display: flex; padding: .15rem; border: 1px solid var(--rule); border-radius: 999px; }
+.langs button {
+  padding: .42rem .65rem; cursor: pointer; font: 600 .76rem/1 var(--sans); letter-spacing: .06em;
+  color: var(--sage); background: none; border: 0; border-radius: 999px; transition: color .2s, background-color .2s;
 }
-.ask input::placeholder { color: var(--graphite); opacity: .75; }
-.ask input:focus-visible { outline: none; border-bottom-color: var(--blueline); }
+.langs button:hover { color: var(--paper); }
+.langs button[aria-pressed="true"] { color: var(--night); background: var(--brass); }
+.brand { display: block; line-height: 0; border-radius: 6px; }
+.brand img { width: auto; height: 3.6rem; }
+
+.hero { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .8s var(--ease), opacity .45s ease; }
+.hero > div { min-height: 0; overflow: hidden; text-align: center; }
+.asked .hero { grid-template-rows: 0fr; opacity: 0; }
+.hero h1 { margin: 13vh 0 0; font: 400 clamp(3.75rem, 7vw, 6.75rem)/.95 var(--display); letter-spacing: -.025em; }
+.hero p { max-width: 37rem; margin: 1.5rem auto 0; font: 1.22rem/1.55 var(--serif); color: var(--sage); text-wrap: balance; }
+
+/* The question field becomes the question's title once asked, centred in both, so it only has to
+   grow and rise. Hoefler, not Big Caslon: Big Caslon's ¿ looks odd. */
+.asker { position: relative; max-width: 48rem; margin: 2.6rem auto 0; transition: max-width .8s var(--ease), margin .8s var(--ease); }
+.asked .asker { max-width: 72rem; margin-top: 1.6rem; }
+.ask { position: relative; }
+.ask textarea {
+  display: block; width: 100%; margin: 0; resize: none; field-sizing: content;
+  padding: 1.05rem 9.2rem; font: 1.75rem/1.2 var(--serif); color: var(--paper); text-align: center;
+  background: var(--desk); border: 1px solid var(--rule); border-radius: 14px; outline: none;
+  transition: font-size .8s var(--ease), padding .8s var(--ease), background-color .5s, border-color .3s, border-radius .8s;
+}
+.ask textarea::placeholder { color: var(--sage); opacity: 1; }
+.ask textarea:focus { border-color: var(--brass); }
 .ask button {
-  padding: .8rem 1.25rem; cursor: pointer;
-  font: 600 .95rem/1 var(--sans); color: var(--sheet);
-  background: var(--ink); border: 0; border-radius: 3px;
+  position: absolute; top: .5rem; right: .5rem; bottom: .5rem; padding: 0 1.4rem; cursor: pointer;
+  font: 600 1.02rem/1 var(--sans); color: var(--night);
+  background: var(--brass); border: 0; border-radius: 10px;
+  transition: filter .2s, opacity .3s;
 }
-.examples {
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem 1rem;
-  margin: 1rem 0 0; font: .85rem/1.4 var(--sans); color: var(--graphite);
+.ask button:hover { filter: brightness(1.08); }
+.asked .ask textarea {
+  padding: 0 .2em .2rem; font-size: clamp(2.1rem, 3.4vw, 3.3rem);
+  background: transparent; border-color: transparent; border-radius: 0;
 }
+.asked .ask textarea:focus { border-bottom-color: var(--brass); }
+.asked .ask button { opacity: 0; visibility: hidden; transition: opacity .3s, visibility 0s .3s; }
+
+.facts { margin: .7rem 0 0; font: .85rem/1.3 var(--sans); color: var(--sage); text-align: center; font-variant-numeric: tabular-nums; }
+.asked .facts { display: none; }
+.examples { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: .55rem; margin-top: 1.15rem; font: .95rem/1.3 var(--sans); color: var(--sage); }
+.examples .label { margin-right: .3rem; }
 .example {
-  padding: 0; cursor: pointer; font: inherit; color: var(--ink); background: none; border: 0;
-  text-decoration: underline 1.5px var(--rule); text-underline-offset: .25em;
+  padding: .5rem .95rem; cursor: pointer;
+  font: 1.02rem/1.3 var(--serif); color: var(--paper); text-align: left;
+  background: transparent; border: 1px solid var(--rule); border-radius: 999px;
+  transition: border-color .2s, background-color .2s;
 }
-.example:hover { text-decoration-color: var(--blueline); }
+.example:hover { border-color: var(--brass); background: rgba(217, 166, 70, .1); }
+.examples .keys { display: none; }
+.asked .examples {
+  position: absolute; z-index: 5; top: 100%; left: 50%; width: min(34rem, 100%);
+  flex-direction: column; align-items: stretch; gap: .1rem;
+  margin-top: .6rem; padding: .7rem;
+  background: var(--desk); border: 1px solid var(--rule); border-radius: 14px;
+  box-shadow: 0 1.5rem 3.5rem rgba(0, 0, 0, .5);
+  opacity: 0; visibility: hidden; translate: -50% -.3rem;
+}
+.asked .asker:focus-within .examples { opacity: 1; visibility: visible; translate: -50% 0; transition: opacity .18s, translate .18s; }
+.asked .examples .label { margin: 0 0 .3rem .6rem; }
+.asked .example { padding: .55rem .6rem; border: 0; border-radius: 9px; }
+.asked .examples .keys { display: block; margin: .5rem .6rem .1rem; font-size: .82rem; }
 
-.steps {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem;
-  margin: 2.5rem 0 0; padding: 0; list-style: none; counter-reset: step; font-family: var(--sans);
-  scroll-margin-top: 1.25rem;
-}
-.steps li {
-  counter-increment: step; display: grid; grid-template-columns: auto 1fr; column-gap: .7rem;
-  align-items: center; color: var(--graphite);
-}
-.steps .dot {
-  grid-row: span 2; display: grid; place-items: center; width: 1.8rem; height: 1.8rem;
-  border: 1.5px solid var(--rule); border-radius: 50%; font-size: .8rem; font-weight: 600;
-}
-.steps .dot::before { content: counter(step); }
-.steps .name { font-size: .92rem; font-weight: 600; line-height: 1.3; }
-.steps .detail { min-height: 1.3em; font-size: .82rem; line-height: 1.3; font-variant-numeric: tabular-nums; }
-.steps li[data-state="active"], .steps li[data-state="done"] { color: var(--ink); }
-.steps li[data-state="active"] .dot { border-color: var(--blueline); color: var(--blueline); animation: pulse 1.4s ease-out infinite; }
-.steps li[data-state="done"] .dot { background: var(--ink); border-color: var(--ink); color: var(--sheet); }
-.steps li[data-state="done"] .dot::before { content: "✓"; }
-.steps li[data-state="failed"] .dot { border-color: var(--red); color: var(--red); }
-@keyframes pulse {
-  from { box-shadow: 0 0 0 0 var(--blueline-wash), 0 0 0 0 var(--blueline); }
-  to { box-shadow: 0 0 0 .55rem transparent, 0 0 0 0 transparent; }
-}
+.run { transition: opacity .3s ease; }
+.run.leaving { opacity: 0; }
 
-.sources { margin-top: 1.6rem; font-family: var(--sans); }
-.sources h2 { margin: 0 0 .55rem; font-size: .82rem; font-weight: 600; color: var(--graphite); }
-.sources ol {
-  columns: 2; column-gap: 2rem;
-  margin: 0; padding: 0; list-style: none; font-size: .8rem; line-height: 1.45;
+.rail { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; row-gap: .4rem; margin: 1.5rem 0 0; padding: 0; list-style: none; font: 500 .95rem/1.3 var(--sans); color: var(--sage); animation: appear .5s ease both; }
+.rail li { display: flex; align-items: center; transition: color .4s; }
+.rail li + li::before {
+  content: ""; width: 3rem; height: 1px; margin: 0 1.1rem;
+  background: linear-gradient(var(--brass), var(--brass)) left / 0 100% no-repeat var(--rule);
+  transition: background-size .6s var(--ease);
 }
-.sources li { display: flex; gap: .55rem; min-width: 0; padding: .12rem 0; break-inside: avoid; color: var(--graphite); transition: color .4s; }
-.sources .n { flex: none; width: 1.2rem; text-align: right; font-variant-numeric: tabular-nums; }
-.sources a { min-width: 0; overflow: hidden; color: inherit; text-decoration: none; white-space: nowrap; text-overflow: ellipsis; }
-.sources a:hover { text-decoration: underline; }
-.sources li.cited { color: var(--ink); }
-.sources li.cited .n { color: var(--blueline); font-weight: 700; }
+.rail li:not([data-state="waiting"])::before { background-size: 100% 100%; }
+.rail .dot { flex: none; width: .62rem; height: .62rem; margin-right: .6rem; border: 1.5px solid currentColor; border-radius: 50%; transition: background-color .3s, border-color .3s; }
+.rail li[data-state="active"], .rail li[data-state="done"] { color: var(--paper); }
+.rail li[data-state="active"] .dot { border-color: var(--brass); background: var(--brass); animation: pulse 1.4s ease-out infinite; }
+.rail li[data-state="done"] .dot { border-color: var(--brass); background: var(--brass); }
+.rail li[data-state="failed"] .dot { border-color: var(--red); background: var(--red); }
+.rail .detail { margin-left: .6rem; color: var(--sage); font-weight: 400; font-variant-numeric: tabular-nums; }
+@keyframes pulse { from { box-shadow: 0 0 0 0 var(--brass-glow); } to { box-shadow: 0 0 0 .55rem transparent; } }
+@keyframes appear { from { opacity: 0; } }
 
-/* The sheet holds the answer; the quotes sit outside it, in the margin. */
-.proof { position: relative; margin-top: 1.8rem; padding: 2.1rem 0 2.25rem; }
-.proof::before {
-  content: ""; position: absolute; inset: 0 auto 0 0; width: calc(var(--measure) + 2 * var(--pad));
-  background: var(--sheet); border: 1px solid var(--rule); border-radius: 3px;
+.narration { min-height: 1.55em; margin: .6rem 0 0; text-align: center; font: 1rem/1.55 var(--sans); color: var(--sage); transition: opacity .18s; }
+.narration.swap { opacity: 0; }
+
+.stage {
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(19rem, 25rem);
+  column-gap: clamp(4.5rem, 9vw, 9rem); align-items: start; margin-top: 2.4rem;
 }
-.proof > * { position: relative; }
-.question, .key, .silence { max-width: calc(var(--measure) + 2 * var(--pad)); padding: 0 var(--pad); }
-.question { margin: 0; font-size: 1.45rem; line-height: 1.3; font-weight: 600; }
-.key { margin: .45rem 0 1.6rem; font: .8rem/1.45 var(--sans); color: var(--graphite); }
-.key .swatch { color: var(--blueline); font-weight: 600; }
+.stage > :not(svg) { position: relative; z-index: 1; }
 
+/* Threads run from each sentence's citation to the passage it cites. */
+.threads { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; transition: opacity 1.2s ease; }
+.threads g { transition: opacity .35s ease; }
+.threads path { fill: none; stroke-linecap: round; }
+.threads .ghost { stroke: var(--sage); stroke-width: 1.3; stroke-dasharray: .5 5.5; opacity: 0; transition: opacity .6s ease; }
+.threads .live { stroke: var(--brass); stroke-width: 1.8; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset .65s var(--ease), stroke .25s ease, opacity .8s ease; }
+.threads .end { fill: var(--sage); opacity: 0; transition: opacity .4s ease, fill .25s ease; }
+.threads .drafted .ghost { opacity: .75; }
+.threads .drafted .end { opacity: .8; }
+.threads .pulled .live { stroke-dashoffset: 0; }
+.threads .kept .ghost { opacity: 0; }
+.threads .kept .end { fill: var(--brass); opacity: 1; }
+.threads .cut .live { stroke: var(--red); opacity: 0; transition: stroke .2s ease, opacity .9s ease .8s; }
+.threads .cut .ghost { opacity: .15; }
+.threads .cut .end { fill: var(--red); opacity: .4; }
+.stage.focus .threads g:not(.current) { opacity: .12; }
+.settled .threads .kept .live { opacity: .75; }
+.silent .threads { opacity: 0; }
+
+.lines { display: grid; gap: 1.55rem; }
 .line {
-  position: relative; display: grid; grid-template-columns: var(--measure) minmax(0, 1fr);
-  column-gap: calc(var(--pad) + var(--gutter)); align-items: start; padding-left: var(--pad);
+  display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); outline-offset: .4rem;
+  opacity: 0; filter: blur(.4rem); translate: 0 .4rem;
+  transition: opacity .55s ease, filter .55s ease, translate .55s ease;
 }
-.mark { position: absolute; top: .45rem; left: calc(var(--pad) - 1.8rem); width: 1.25rem; height: 1.25rem; color: var(--ink); }
-.mark svg { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.line.shown { opacity: 1; filter: none; translate: 0 0; }
+.stage.focus .line.shown:not(.current) { opacity: .28; }
+.mark { width: 1.35rem; height: 1.35rem; margin-top: .62rem; color: var(--brass); }
+.mark svg { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .mark path { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset .5s ease; }
 .line[data-state="kept"] .mark path, .line[data-state="dropped"] .mark path { stroke-dashoffset: 0; }
 .line[data-state="dropped"] .mark { color: var(--red); }
-.line[data-state="dropped"] .mark path { transition-delay: .55s; }
-.line + .line { margin-top: 1.35rem; }
-.claim { margin: 0 -.45rem; padding: .05rem .45rem; font-size: 1.12rem; line-height: 1.6; border-radius: 3px; transition: background-color .3s; }
-.claim .text {
-  color: var(--blueline);
-  background-image: linear-gradient(var(--red), var(--red));
-  background-repeat: no-repeat; background-position: 0 62%; background-size: 0 2px;
-  transition: color .7s ease;
+.line[data-state="dropped"] .mark path { transition-delay: .6s; }
+.claim { margin: 0; font: 1.6rem/1.48 var(--serif); color: var(--sage); text-wrap: pretty; transition: color .7s ease; }
+.claim .text { background: linear-gradient(var(--red), var(--red)) 0 60% / 0 .14rem no-repeat; transition: background-size .95s cubic-bezier(.65, 0, .35, 1); }
+.claim .tail { white-space: nowrap; }
+.line[data-state="kept"] .claim { color: var(--paper); }
+.line[data-state="dropped"] .claim { color: var(--faded); transition: color .8s ease .9s; }
+.line[data-state="dropped"] .claim .text { background-size: 100% .14rem; }
+.chip {
+  display: inline-grid; place-items: center; min-width: 1.5em; height: 1.5em; margin-left: .35em; padding: 0 .35em;
+  vertical-align: .14em; font: 700 .5em/1 var(--sans); font-variant-numeric: tabular-nums;
+  color: var(--sage); border: 1.5px solid currentColor; border-radius: 999px;
+  transition: color .4s, background-color .4s, border-color .4s;
 }
-.claim .ref { margin-left: .15em; font: 700 .62em/0 var(--sans); color: var(--blueline); transition: color .7s ease; }
-.line[data-state="checking"] .claim { background-color: var(--blueline-wash); }
-.line[data-state="kept"] .text, .line[data-state="kept"] .ref { color: var(--ink); }
-.line[data-state="dropped"] .text {
-  color: var(--graphite); background-size: 100% 2px;
-  transition: background-size .8s cubic-bezier(.65, 0, .35, 1), color .6s ease .35s;
+.line.current .chip { color: var(--brass); animation: pulse 1.4s ease-out infinite; }
+.line[data-state="kept"] .chip { color: var(--night); background: var(--brass); border-color: var(--brass); animation: none; }
+.line[data-state="dropped"] .chip { color: var(--red); border-color: var(--red); animation: none; }
+.reason { margin: .5rem 0 0; font: 500 1rem/1.4 var(--sans); color: var(--red-text); opacity: 0; translate: 0 -.25rem; transition: opacity .45s ease .85s, translate .45s ease .85s; }
+.line[data-state="dropped"] .reason { opacity: 1; translate: 0 0; }
+.inline-quote { display: none; }
+.stage.drafting .answer::before {
+  content: ""; display: block; width: 2px; height: 1.95rem; margin: .4rem 0 0 2.5rem;
+  background: var(--brass); animation: blink 1.1s steps(1) infinite;
 }
-.line[data-state="dropped"] .ref { color: var(--graphite); }
+@keyframes blink { 50% { opacity: 0; } }
 
-.note { padding-top: .2rem; font-size: .88rem; line-height: 1.5; color: var(--graphite); }
-.note blockquote { margin: 0; font-style: italic; hyphens: auto; }
-.note .where {
-  display: inline-block; margin-top: .3rem; font: .76rem/1.4 var(--sans); color: var(--graphite);
-  text-decoration: underline 1px var(--rule); text-underline-offset: .2em;
+.sources h2 { margin: 0 0 .75rem .55rem; font: 500 .9rem/1.3 var(--sans); color: var(--sage); }
+.source-list { position: relative; margin: 0; padding: 0; list-style: none; }
+.source {
+  display: grid; grid-template-columns: 1.9rem minmax(0, 1fr);
+  padding: .42rem .7rem .42rem .55rem; border-radius: 12px;
+  transition: background-color .35s ease, opacity .5s ease;
+  animation: arrive .5s cubic-bezier(.2, .7, .2, 1) backwards; animation-delay: calc(var(--i) * 60ms);
 }
-.note .where:hover { color: var(--ink); text-decoration-color: currentColor; }
-.reason { margin: .3rem 0 0; font: 600 .82rem/1.4 var(--sans); color: var(--red); opacity: 0; transition: opacity .4s ease .7s; }
-.line[data-state="dropped"] .reason { opacity: 1; }
+@keyframes arrive { from { opacity: 0; translate: 1rem 0; } }
+.source .n { align-self: start; font: 600 .8rem/1.38rem var(--sans); color: var(--sage); font-variant-numeric: tabular-nums; transition: color .3s; }
+.source .meta { min-width: 0; }
+.source .title { display: block; overflow: hidden; font: 1.04rem/1.32 var(--serif); color: var(--paper); text-decoration: none; white-space: nowrap; text-overflow: ellipsis; }
+.source .title:hover { text-decoration: underline 1px var(--brass); text-underline-offset: .2em; }
+.source .where { display: block; overflow: hidden; font: .8rem/1.35 var(--sans); color: var(--sage); white-space: nowrap; text-overflow: ellipsis; }
+.source .quote { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .5s var(--ease); }
+.source .quote > div { min-height: 0; overflow: hidden; }
+.source blockquote { margin: 0; padding: .6rem 0 .25rem; font: italic 1.02rem/1.5 var(--serif); color: var(--paper); hyphens: auto; }
+.source mark { color: inherit; background: linear-gradient(var(--brass-glow), var(--brass-glow)) 0 0 / 0 100% no-repeat; transition: background-size var(--sweep, 1s) cubic-bezier(.45, 0, .25, 1); }
+.source.open { background: var(--desk); }
+.source.open .quote { grid-template-rows: 1fr; }
+.source.lit mark { background-size: 100% 100%; }
+.source.missing mark { background: none; text-decoration: line-through 2px var(--red); }
+.source.claimed .n { color: var(--paper); }
+.source.cited .n { color: var(--brass); }
+.stage.focus .source:not(.open) { opacity: .45; }
+.settled .source:not(.cited) { opacity: .38; }
+.settled .source.open { opacity: 1; }
+.silent .sources { opacity: .3; transition: opacity 1.6s ease; }
+.sources.reading .source-list::after {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3.2rem; border-radius: 12px; pointer-events: none;
+  background: linear-gradient(transparent, rgba(217, 166, 70, .17), transparent);
+  animation: scan 1.8s ease-in-out infinite alternate;
+}
+@keyframes scan { to { top: calc(100% - 3.2rem); } }
 
-.silence { margin-top: 1.1rem; }
-.lines:not(:empty) + .silence { margin-top: 2rem; padding-top: 1.4rem; border-top: 1px solid var(--rule); }
-.silence p { margin: 0; }
-.silence .verdict-line { font-size: 1.5rem; line-height: 1.3; }
-.silence .why { margin-top: .5rem; font: .85rem/1.45 var(--sans); color: var(--graphite); }
+.silence { opacity: 0; translate: 0 .5rem; transition: opacity 1.3s ease .2s, translate 1.3s ease .2s; }
+.silence.shown { opacity: 1; translate: 0 0; }
+.lines:not(:empty) + .silence { margin-top: 2.6rem; }
+.silence .verdict { margin: 0; font: clamp(2.6rem, 4.6vw, 4.4rem)/1.04 var(--display); letter-spacing: -.02em; }
+.silence .why { max-width: 30rem; margin: 1.1rem 0 0; font: 1.2rem/1.55 var(--serif); color: var(--sage); }
 
-.failure { max-width: 46rem; margin: 1.5rem 0 0; font: .9rem/1.5 var(--sans); color: var(--red); }
-.colophon { margin-top: 3.5rem; font: .78rem/1.5 var(--sans); color: var(--graphite); }
+.access { max-width: 34rem; margin: 2.6rem auto 0; text-align: center; animation: appear .5s ease both; }
+.access p { margin: 0; font: 1.2rem/1.55 var(--serif); color: var(--sage); text-wrap: balance; }
+.access a {
+  display: inline-block; margin-top: 1.4rem; padding: .85rem 1.4rem;
+  font: 600 1rem/1 var(--sans); color: var(--night); text-decoration: none;
+  background: var(--brass); border-radius: 10px; transition: filter .2s;
+}
+.access a:hover { filter: brightness(1.08); }
 
-@media (max-width: 60rem) {
-  :root { --pad: 1.25rem; }
-  .proof::before { width: 100%; }
-  .question, .key, .silence { max-width: none; }
-  .line { grid-template-columns: minmax(0, 1fr); padding: 0 var(--pad) 0 calc(var(--pad) + 1.5rem); }
-  .mark { left: calc(var(--pad) - .1rem); }
-  .note { margin-top: .45rem; padding: 0 0 0 .85rem; border-left: 2px solid var(--rule); }
+/* The public demo cannot show SEP text: an open passage offers the link to its section instead. */
+.go { margin: 0; padding: .45rem 0 .2rem; font: .88rem/1.3 var(--sans); }
+.go a { color: var(--brass); text-decoration: none; }
+.go a:hover { text-decoration: underline; text-underline-offset: .2em; }
+.public .inline-quote { display: none !important; }
+.public .examples .keys { display: none; }
+
+.foot {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: .4rem 2rem;
+  margin-top: auto; padding-top: 4rem; font: .8rem/1.45 var(--sans); color: var(--faded);
+}
+.foot a { color: var(--sage); text-decoration: none; }
+.foot a:hover { color: var(--paper); }
+.foot .note { flex-basis: 100%; }
+
+.failure { max-width: 46rem; margin: 1.6rem auto 0; text-align: center; font: 1rem/1.5 var(--sans); color: var(--red-text); }
+
+@media (max-width: 64rem) {
+  .page { padding: 1.75rem 1.75rem 3rem; }
+  .stage { grid-template-columns: minmax(0, 1fr); row-gap: 3rem; }
+  .threads { display: none; }
+  /* No room for threads: each quote shows under its sentence instead. */
+  .inline-quote { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .5s var(--ease); }
+  .inline-quote > div { min-height: 0; overflow: hidden; }
+  .line.current .inline-quote, .line[data-state="kept"] .inline-quote, .line[data-state="dropped"] .inline-quote { grid-template-rows: 1fr; }
+  .inline-quote blockquote { margin: .7rem 0 0; padding-left: .9rem; border-left: 2px solid var(--brass); font: italic 1.02rem/1.5 var(--serif); color: var(--paper); }
+  .line[data-state="dropped"] .inline-quote blockquote { border-left-color: var(--red); }
+  .source.open .quote { grid-template-rows: 0fr; }
 }
 @media (max-width: 40rem) {
-  .page { padding-top: 2.25rem; }
-  .ask { flex-direction: column; align-items: stretch; }
-  .steps { grid-template-columns: minmax(0, 1fr); gap: .8rem; }
-  .sources ol { columns: 1; }
+  .page { padding: 1.25rem 1rem 1.5rem; }
+  .brand img { height: 3rem; }
+  .nav { gap: .5rem; font-size: .85rem; }
+  .hero h1 { margin-top: 8vh; }
+  .ask textarea { padding: 1rem 1.1rem; }
+  .ask button { position: static; display: block; width: 100%; margin-top: .75rem; padding: 1rem; }
+  .asked .ask button { display: none; }
+  .rail li + li::before { width: 1rem; margin: 0 .6rem; }
+  .line { grid-template-columns: 1.9rem minmax(0, 1fr); }
+  .claim { font-size: 1.32rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 </style>
 </head>
-<body>
+<body data-mode="__MODE__" data-model="__MODEL__" data-entries="__ENTRIES__" data-passages="__PASSAGES__" data-examples="__EXAMPLES__">
 <main class="page">
-  <header>
-    <h1 class="wordmark">cite-or-silence</h1>
-    <p class="lede">Respuestas de filosofía sacadas solo de la Stanford Encyclopedia of Philosophy. Cada frase trae su cita; si la cita no la respalda, se tacha. Si no queda ninguna, silencio.</p>
+  <header class="top">
+    <a class="brand" id="home" href="." data-t-title="home"><img src="static/wordmark.svg" alt="cite-or-silence" width="2043" height="1209"></a>
+    <nav class="nav">
+      <a class="icon" href="https://github.com/abp002/cite-or-silence" aria-label="GitHub" title="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.4-.6-1.6 0-3.2 0 0 1-.3 3.4 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8 0 3.2.9.8 1.3 1.9 1.3 3.2 0 4.6-2.8 5.6-5.5 5.9.5.4.9 1.1.9 2.3v3.3c0 .3.1.7.8.6A12 12 0 0 0 12 .3"/></svg></a>
+      <a class="icon" href="https://www.linkedin.com/in/alejandro-borrego-p%C3%A9rez-de-algaba-b1652b388" aria-label="LinkedIn" title="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.4 20.5h-3.6v-5.6c0-1.3 0-3-1.8-3s-2.1 1.4-2.1 2.9v5.7H9.4V9h3.4v1.6c.5-.9 1.6-1.8 3.4-1.8 3.6 0 4.3 2.4 4.3 5.5v6.2zM5.3 7.4a2.1 2.1 0 1 1 0-4.1 2.1 2.1 0 0 1 0 4.1zm1.8 13.1H3.6V9h3.5v11.5zM22.2 0H1.8C.8 0 0 .8 0 1.7v20.6c0 .9.8 1.7 1.8 1.7h20.4c1 0 1.8-.8 1.8-1.7V1.7C24 .8 23.2 0 22.2 0z"/></svg></a>
+      <a class="icon" href="https://abp002.github.io" aria-label="Web" title="Web"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg></a>
+      <div class="langs" role="group" aria-label="Idioma / Language">
+        <button type="button" data-lang="es" lang="es">ES</button>
+        <button type="button" data-lang="en" lang="en">EN</button>
+      </div>
+    </nav>
   </header>
 
-  <form class="ask" id="ask" autocomplete="off">
-    <label class="sr-only" for="q">Pregunta</label>
-    <input id="q" name="q" type="text" placeholder="Escribe una pregunta de filosofía" required>
-    <button type="submit">Preguntar</button>
-  </form>
-  <p class="examples">
-    <span>Prueba con</span>
-    <button type="button" class="example">¿Qué ilustra la alegoría de la caverna de Platón?</button>
-    <button type="button" class="example">¿Qué es la suerte moral según Williams y Nagel?</button>
-    <button type="button" class="example">¿Qué opinaba Platón de los smartphones?</button>
-  </p>
-
-  <ol class="steps" id="steps" aria-live="polite" hidden>
-    <li data-step="search"><span class="dot" aria-hidden="true"></span><span class="name">Buscar en la SEP</span><span class="detail"></span></li>
-    <li data-step="draft"><span class="dot" aria-hidden="true"></span><span class="name">Redactar con citas</span><span class="detail"></span></li>
-    <li data-step="verify"><span class="dot" aria-hidden="true"></span><span class="name">Comprobar cada cita</span><span class="detail"></span></li>
-  </ol>
-
-  <section class="sources" id="sources" hidden>
-    <h2>Pasajes que ha encontrado la búsqueda</h2>
-    <ol id="source-list"></ol>
+  <section class="hero">
+    <div>
+      <h1 data-t="headline"></h1>
+      <p data-t="lede"></p>
+    </div>
   </section>
 
-  <article class="proof" id="proof" hidden>
-    <h2 class="question" id="question"></h2>
-    <p class="key" id="key" hidden>En <span class="swatch">azul</span>, el borrador. Lo que su cita respalda se pasa a tinta; lo demás se tacha.</p>
-    <div class="lines" id="lines"></div>
-    <div class="silence" id="silence" hidden>
-      <p class="verdict-line">La SEP no cubre esta pregunta.</p>
-      <p class="why" id="silence-why"></p>
+  <div class="asker">
+    <form class="ask" id="ask" autocomplete="off">
+      <label class="sr-only" for="q" data-t="question"></label>
+      <textarea id="q" name="q" rows="1" spellcheck="false"></textarea>
+      <button type="submit" data-t="ask"></button>
+    </form>
+    <p class="facts" id="facts"></p>
+    <div class="examples" id="examples">
+      <span class="label" data-t="try"></span>
+      <span class="keys" data-t="keys"></span>
     </div>
-  </article>
+  </div>
 
-  <p class="failure" id="failure" role="alert" hidden></p>
+  <div class="run" id="run">
+    <ol class="rail" id="rail" hidden>
+      <li data-step="search"><span class="dot" aria-hidden="true"></span><span data-t="stepSearch"></span><span class="detail"></span></li>
+      <li data-step="draft"><span class="dot" aria-hidden="true"></span><span data-t="stepDraft"></span><span class="detail"></span></li>
+      <li data-step="verify"><span class="dot" aria-hidden="true"></span><span data-t="stepVerify"></span><span class="detail"></span></li>
+    </ol>
+    <p class="narration" id="narration" aria-live="polite"></p>
 
-  <footer class="colophon">Responde __MODEL__ con los diez pasajes de la SEP que encuentra la búsqueda. Las citas enlazan a la sección de la enciclopedia de la que salen.</footer>
+    <div class="stage" id="stage" hidden>
+      <svg class="threads" id="threads" aria-hidden="true"></svg>
+      <div class="answer">
+        <div class="lines" id="lines"></div>
+        <div class="silence" id="silence" hidden>
+          <p class="verdict" data-t="uncovered"></p>
+          <p class="why" id="silence-why"></p>
+        </div>
+      </div>
+      <section class="sources" id="sources" hidden>
+        <h2 data-t="found"></h2>
+        <ol class="source-list" id="source-list"></ol>
+      </section>
+    </div>
+
+    <div class="access" id="access" hidden>
+      <p data-t="access"></p>
+      <a href="https://www.linkedin.com/in/alejandro-borrego-p%C3%A9rez-de-algaba-b1652b388" data-t="requestAccess"></a>
+    </div>
+
+    <p class="failure" id="failure" role="alert" hidden></p>
+  </div>
+
+  <footer class="foot">
+    <span><span data-t="source"></span> <a href="https://plato.stanford.edu">Stanford Encyclopedia of Philosophy</a></span>
+    <span id="model"></span>
+    <span class="note" id="note" hidden data-t="publicNote"></span>
+  </footer>
 </main>
 
 <script>
 const $ = (id) => document.getElementById(id);
-const form = $('ask'), input = $('q'), stepList = $('steps'), sources = $('sources'), sourceList = $('source-list');
-const proof = $('proof'), question = $('question'), key = $('key'), lines = $('lines');
-const silence = $('silence'), silenceWhy = $('silence-why'), failure = $('failure');
+const body = document.body;
+const form = $('ask'), input = $('q'), runBox = $('run'), rail = $('rail'), narration = $('narration');
+const stage = $('stage'), threads = $('threads'), lines = $('lines'), sources = $('sources'), sourceList = $('source-list');
+const silence = $('silence'), silenceWhy = $('silence-why'), failure = $('failure'), access = $('access');
 
 const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const sleep = (ms) => new Promise((done) => setTimeout(done, calm ? 0 : ms));
-const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+const narrow = matchMedia('(max-width: 64rem)');
+const sleep = (ms) => new Promise((done) => setTimeout(done, calm ? 0 : Math.max(0, ms)));
+const ENTRIES = Number(body.dataset.entries) || 0, TOTAL = Number(body.dataset.passages) || 0;
+// The public demo replays the example answers saved by `cite-or-silence export`, which carry no SEP text.
+const PUBLIC = body.dataset.mode === 'public';
+const EXAMPLES = JSON.parse(body.dataset.examples || '{}');
+let ANSWERS = {};
 
-const REASONS = {
-  'quote does not support the sentence': 'La cita no respalda esta frase.',
-  'quote not found in the cited passage': 'La cita no aparece en el pasaje que dice citar.',
-  'cites a passage that was not given': 'Cita un pasaje que la búsqueda no encontró.',
+const TEXT = {
+  es: {
+    home: 'Volver al inicio',
+    headline: 'Cada frase, con su cita.',
+    lede: 'Preguntas de filosofía respondidas solo con la Stanford Encyclopedia of Philosophy. Lo que su cita no respalda se tacha; si no queda nada, calla.',
+    question: 'Pregunta', placeholder: 'Escribe una pregunta de filosofía', ask: 'Preguntar', try: 'Prueba con',
+    facts: (e, p) => `${fmt(e)} entradas · ${fmt(p)} pasajes · cada cita comprobada`,
+    keys: 'Intro pregunta; Mayúsculas+Intro vuelve a preguntar al modelo en vez de repetir la respuesta guardada.',
+    stepSearch: 'Buscar en la SEP', stepDraft: 'Redactar con citas', stepVerify: 'Comprobar cada cita',
+    working: { search: 'Buscando', draft: 'Redactando', verify: 'Comprobando' },
+    uncovered: 'La SEP no cubre esta pregunta.', found: 'Pasajes encontrados en la SEP',
+    reasons: {
+      'quote does not support the sentence': 'La cita no respalda esta frase.',
+      'quote not found in the cited passage': 'La cita no aparece en el pasaje que dice citar.',
+      'cites a passage that was not given': 'Cita un pasaje que la búsqueda no encontró.',
+    },
+    passage: ['pasaje', 'pasajes'], sentence: ['frase', 'frases'], backed: ['respaldada', 'respaldadas'], struck: ['tachada', 'tachadas'],
+    noSentence: 'ninguna frase', nothingToCheck: 'nada que comprobar', failed: 'falló',
+    intro: 'Introducción', another: ', otro fragmento', cites: (n) => `Cita el pasaje ${n}`, read: 'Leer esta sección en la SEP ↗',
+    struckState: ' Tachada: ', backedState: ' Respaldada por su cita.',
+    searching: (n) => n ? `Buscando entre los ${fmt(n)} pasajes de la Stanford Encyclopedia of Philosophy…` : 'Buscando en la Stanford Encyclopedia of Philosophy…',
+    drafting: (n) => `El modelo escribe la respuesta solo con estos ${n} pasajes y anota de cuál sale cada frase.`,
+    checking: 'Borrador listo. Ahora se comprueba cada cita: si no respalda su frase, la frase se tacha.',
+    settledStruck: 'Queda lo que su cita respalda; lo demás se ha tachado. Pasa el ratón por una frase para ver su cita.',
+    settledAll: 'Cada frase se apoya en una cita de la SEP. Pasa el ratón por una frase para ver la suya.',
+    allStruck: 'Ninguna frase del borrador ha pasado la comprobación de su cita, así que no queda nada que afirmar.',
+    nothingFound: (n) => `Ninguno de los ${spell(n)} pasajes que ha encontrado responde a esto, así que no escribe nada. Antes que inventar, calla.`,
+    numbers: ['cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez'],
+    failure: (m) => `No se pudo responder (${m}). Pulsa Intro en la pregunta para intentarlo otra vez.`,
+    cutOff: 'se ha cortado la conexión con cite-or-silence serve',
+    source: 'Fuente:', model: 'Modelo:',
+    access: 'Esta demo solo responde las preguntas de ejemplo: la Stanford Encyclopedia of Philosophy no deja publicar su texto. La versión completa, con cualquier pregunta y las citas a la vista, se comparte en grupo cerrado.',
+    requestAccess: 'Pedir acceso completo',
+    publicNote: 'Demo pública: cada cita enlaza a su sección de la SEP en vez de reproducir el texto, que sus condiciones no permiten publicar.',
+  },
+  en: {
+    home: 'Back to start',
+    headline: 'Every sentence, cited.',
+    lede: 'Philosophy questions answered only from the Stanford Encyclopedia of Philosophy. Whatever its citation does not back is struck out; if nothing is left, it stays silent.',
+    question: 'Question', placeholder: 'Ask a philosophy question', ask: 'Ask', try: 'Try',
+    facts: (e, p) => `${fmt(e)} entries · ${fmt(p)} passages · every citation checked`,
+    keys: 'Enter asks; Shift+Enter asks the model again instead of replaying the saved answer.',
+    stepSearch: 'Search the SEP', stepDraft: 'Draft with citations', stepVerify: 'Check every citation',
+    working: { search: 'Searching', draft: 'Drafting', verify: 'Checking' },
+    uncovered: 'The SEP does not cover this question.', found: 'Passages found in the SEP',
+    reasons: {
+      'quote does not support the sentence': 'The quote does not back this sentence.',
+      'quote not found in the cited passage': 'The quote is not in the passage it cites.',
+      'cites a passage that was not given': 'It cites a passage the search did not find.',
+    },
+    passage: ['passage', 'passages'], sentence: ['sentence', 'sentences'], backed: ['backed', 'backed'], struck: ['struck', 'struck'],
+    noSentence: 'no sentences', nothingToCheck: 'nothing to check', failed: 'failed',
+    intro: 'Introduction', another: ', another excerpt', cites: (n) => `Cites passage ${n}`, read: 'Read this section in the SEP ↗',
+    struckState: ' Struck: ', backedState: ' Backed by its citation.',
+    searching: (n) => n ? `Searching the ${fmt(n)} passages of the Stanford Encyclopedia of Philosophy…` : 'Searching the Stanford Encyclopedia of Philosophy…',
+    drafting: (n) => `The model writes the answer from these ${n} passages only, noting which one each sentence comes from.`,
+    checking: 'Draft ready. Now every citation is checked: if it does not back its sentence, the sentence is struck.',
+    settledStruck: 'What its citation backs remains; the rest has been struck. Hover over a sentence to see its citation.',
+    settledAll: 'Every sentence rests on a citation from the SEP. Hover over a sentence to see its own.',
+    allStruck: 'No sentence of the draft passed the check of its citation, so there is nothing left to claim.',
+    nothingFound: (n) => `None of the ${spell(n)} passages it found answers this, so it writes nothing. Rather than make things up, it stays silent.`,
+    numbers: ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'],
+    failure: (m) => `Could not answer (${m}). Press Enter in the question to try again.`,
+    cutOff: 'the connection to cite-or-silence serve was lost',
+    source: 'Source:', model: 'Model:',
+    access: 'This demo only answers the example questions: the Stanford Encyclopedia of Philosophy does not allow its text to be published. The full version, with any question and the quotes in view, is shared with a closed group.',
+    requestAccess: 'Request full access',
+    publicNote: 'Public demo: each citation links to its section of the SEP instead of reproducing the text, which its terms do not allow to publish.',
+  },
 };
+const pick = () => {
+  const asked = new URLSearchParams(location.search).get('lang');
+  if (TEXT[asked]) return asked;
+  try { if (TEXT[localStorage.getItem('lang')]) return localStorage.getItem('lang'); } catch {}
+  return navigator.language?.startsWith('es') ? 'es' : 'en';
+};
+let lang = pick(), T = TEXT[lang];
+const fmt = (n) => n.toLocaleString(lang === 'es' ? 'es-ES' : 'en-GB');
+const spell = (n) => T.numbers[n] ?? fmt(n);
+const count = (n, [one, many]) => `${n} ${n === 1 ? one : many}`;
+
 const CHECK = '<path pathLength="1" d="M4.5 12.5l5 5L19.5 6"/>';
 const CROSS = '<path pathLength="1" d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>';
-const WORKING = { search: 'Buscando', draft: 'Redactando', verify: 'Comprobando' };
+const ENDS = { search: 'passages', draft: 'draft', verify: 'verdicts' };  // the event that finishes each step
+// Minimum times in ms, so a saved answer, which arrives all at once, still shows every step.
+const PACE = { collapse: 800, search: 900, read: 1700, line: 280, drafted: 1000, open: 250, decide: 850, kept: 550, dropped: 1500, close: 250, hush: 700 };
+const NS = 'http://www.w3.org/2000/svg';
+const STALE = Symbol('stale');
+const ignoreStale = (e) => { if (e !== STALE) throw e; };
 
-let run = 0, source = null, queue = Promise.resolve(), clock = null, again = false;
+let run = 0, source = null, queue = Promise.resolve(), clock = null, ticking = null, arrived = new Set(), again = false, saying = 0;
+let drafted = [], ties = [], verdicts = [], settled = false;
+
+// Fixed text follows the language at once; an answer on screen keeps the words it was told in.
+function translate(next) {
+  lang = next;
+  T = TEXT[lang];
+  try { localStorage.setItem('lang', lang); } catch {}
+  document.documentElement.lang = lang;
+  for (const node of document.querySelectorAll('[data-t]')) node.textContent = T[node.dataset.t];
+  for (const node of document.querySelectorAll('[data-t-title]')) node.title = T[node.dataset.tTitle];
+  for (const b of document.querySelectorAll('[data-lang]')) b.setAttribute('aria-pressed', String(b.dataset.lang === lang));
+  input.placeholder = T.placeholder;
+  $('facts').textContent = ENTRIES && TOTAL ? T.facts(ENTRIES, TOTAL) : '';
+  $('model').textContent = body.dataset.model ? `${T.model} ${body.dataset.model}` : '';
+  $('note').hidden = !PUBLIC;
+  const examples = $('examples');
+  for (const old of examples.querySelectorAll('.example')) old.remove();
+  const keys = examples.querySelector('.keys');
+  for (const text of EXAMPLES[lang] || []) {
+    const b = el('button', 'example', text);
+    b.type = 'button';
+    b.addEventListener('mousedown', (e) => e.preventDefault());  // keeps the question focused, so the list stays open
+    b.addEventListener('click', (e) => ask(text, e.shiftKey));
+    examples.insertBefore(b, keys);
+  }
+}
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -264,178 +516,400 @@ function el(tag, className, text) {
   return node;
 }
 
+function say(text) {
+  const n = ++saying;
+  narration.classList.add('swap');
+  setTimeout(() => {
+    if (n !== saying) return;
+    narration.textContent = text;
+    narration.classList.remove('swap');
+  }, calm ? 0 : 180);
+}
+
+// The clock of a step shows how long the model really takes: it runs only while the step's result
+// has not arrived, so a saved answer replays without one.
 function step(name, state, detail = '') {
   clearInterval(clock);
-  const li = stepList.querySelector(`[data-step="${name}"]`);
+  ticking = null;
+  const li = rail.querySelector(`[data-step="${name}"]`);
   const out = li.querySelector('.detail');
   li.dataset.state = state;
   out.textContent = detail;
-  if (state === 'active') {
-    const started = Date.now();
-    const tick = () => { out.textContent = `${WORKING[name]}… ${Math.floor((Date.now() - started) / 1000)} s`; };
-    tick();
-    clock = setInterval(tick, 1000);
-  }
+  if (state !== 'active') return;
+  out.textContent = `${T.working[name]}…`;
+  if (arrived.has(ENDS[name])) return;
+  const started = Date.now();
+  const tick = () => { out.textContent = `${T.working[name]}… ${Math.floor((Date.now() - started) / 1000)} s`; };
+  tick();
+  clock = setInterval(tick, 1000);
+  ticking = name;
 }
 
 function where(p) {
-  const section = p.section && p.heading ? `§${p.section} ${p.heading}` : p.heading;
-  return section ? `${p.title}, ${section}` : p.title;
+  if (!p.heading) return T.intro;
+  return p.section ? `§${p.section} ${p.heading}` : p.heading;
 }
 
 function sourceItem(p, n, repeated) {
-  const li = el('li');
+  const li = el('li', 'source');
   li.id = `source-${n}`;
-  const link = el('a', '', where(p) + (repeated ? ', otro fragmento' : ''));
-  link.href = p.url;
-  link.target = '_blank';
-  link.rel = 'noreferrer';
-  link.title = link.textContent;
-  li.append(el('span', 'n', String(n)), link);
+  li.style.setProperty('--i', n - 1);
+  const title = el('a', 'title', p.title);
+  title.href = p.url;
+  title.target = '_blank';
+  title.rel = 'noreferrer';
+  const quote = el('div', 'quote');
+  const inner = el('div');
+  if (PUBLIC) {
+    const go = el('p', 'go'), link = el('a', '', T.read);
+    link.href = p.url;
+    link.target = '_blank';
+    link.rel = 'noreferrer';
+    go.append(link);
+    inner.append(go);
+  } else {
+    const said = el('blockquote');
+    said.lang = 'en';
+    inner.append(said);
+  }
+  quote.append(inner);
+  const meta = el('div', 'meta');
+  meta.append(title, el('span', 'where', where(p) + (repeated ? T.another : '')), quote);
+  li.append(el('span', 'n', String(n)), meta);
   return li;
 }
 
-function lineItem(s, p) {
+function lineItem(s, i) {
   const line = el('div', 'line');
   line.dataset.state = 'draft';
   const mark = el('span', 'mark');
   mark.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"></svg>';
+  // The last word travels with the citation, so the chip never sits alone on a line.
+  const cut = s.text.trimEnd().lastIndexOf(' ');
+  const text = el('span', 'text', s.text.slice(0, cut + 1));
+  const tail = el('span', 'tail', s.text.slice(cut + 1));
+  const chip = el('span', 'chip', String(s.source));
+  chip.title = T.cites(s.source);
+  tail.append(chip);
+  text.append(tail);
   const claim = el('p', 'claim');
-  claim.append(el('span', 'text', s.text), el('sup', 'ref', String(s.source)), el('span', 'sr-only state'));
-  const body = el('div', 'body');
+  claim.append(text, el('span', 'sr-only state'));
   const reason = el('p', 'reason');
   reason.hidden = true;
-  body.append(claim, reason);
-  const note = el('aside', 'note');
-  const quote = el('blockquote', '', `“${s.quote}”`);
-  quote.lang = 'en';
-  note.append(quote);
-  if (p) {
-    const link = el('a', 'where', where(p));
-    link.href = p.url;
-    link.target = '_blank';
-    link.rel = 'noreferrer';
-    note.append(link);
+  const quote = el('div', 'inline-quote');
+  const inner = el('div');
+  if (s.quote) {
+    const said = el('blockquote', '', `“${s.quote}”`);
+    said.lang = 'en';
+    inner.append(said);
   }
-  line.append(mark, body, note);
+  quote.append(inner);
+  const main = el('div');
+  main.append(claim, reason, quote);
+  line.append(mark, main);
+  const show = () => { if (settled && !body.classList.contains('silent')) spotlight(i, false); };
+  const hide = () => { if (settled) unspotlight(); };
+  line.addEventListener('mouseenter', show);
+  line.addEventListener('mouseleave', hide);
+  line.addEventListener('focus', show);
+  line.addEventListener('blur', hide);
   return line;
 }
 
-function decide(line, why) {
-  const said = why ? (REASONS[why] || why) : '';
-  line.querySelector('.mark svg').innerHTML = why ? CROSS : CHECK;
-  line.querySelector('.state').textContent = why ? ` Tachada: ${said}` : ' Respaldada por su cita.';
-  const reason = line.querySelector('.reason');
+function tie(i) {
+  const line = lines.children[i], row = $(`source-${drafted[i].source}`);
+  if (!row) return { line, row: null, g: null };
+  const make = (tag, className) => {
+    const node = document.createElementNS(NS, tag);
+    node.setAttribute('class', className);
+    return node;
+  };
+  const g = make('g', ''), ghost = make('path', 'ghost'), live = make('path', 'live'), end = make('circle', 'end');
+  live.setAttribute('pathLength', '1');
+  end.setAttribute('r', '3.2');
+  g.append(ghost, live, end);
+  threads.append(g);
+  return { line, row, g, ghost, live, end, chip: line.querySelector('.chip'), n: row.querySelector('.n') };
+}
+
+// Every frame, because rows open and close and sentences reflow under the threads.
+function layoutThreads() {
+  if (!ties.length || narrow.matches || stage.hidden) return;
+  const box = stage.getBoundingClientRect(), gutter = lines.getBoundingClientRect().right - box.left + 14;
+  for (const t of ties) {
+    if (!t.g) continue;
+    const a = t.chip.getBoundingClientRect(), b = t.n.getBoundingClientRect();
+    const x1 = a.right - box.left + 5, y1 = a.top + a.height / 2 - box.top;
+    const x2 = t.row.getBoundingClientRect().left - box.left - 6, y2 = b.top + b.height / 2 - box.top;
+    // Straight along the sentence's last line, which is empty past the citation, then curve in the gutter.
+    const xg = Math.max(x1, gutter), k = (x2 - xg) / 2;
+    const d = `M${x1.toFixed(1)} ${y1.toFixed(1)}H${xg.toFixed(1)}C${(xg + k).toFixed(1)} ${y1.toFixed(1)} ${(x2 - k).toFixed(1)} ${y2.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+    if (d === t.d) continue;
+    t.d = d;
+    t.ghost.setAttribute('d', d);
+    t.live.setAttribute('d', d);
+    t.end.setAttribute('cx', x2.toFixed(1));
+    t.end.setAttribute('cy', y2.toFixed(1));
+  }
+}
+(function frame() { layoutThreads(); requestAnimationFrame(frame); })();
+
+function sweepOf(i) { return Math.min(1500, 350 + (drafted[i].quote || '').length * 3); }
+
+function spotlight(i, sweep = true) {
+  const t = ties[i];
+  stage.classList.add('focus');
+  t.line.classList.add('current');
+  t.g?.classList.add('current');
+  if (!t.row) return;
+  t.row.querySelector('blockquote')?.replaceChildren('“', el('mark', '', drafted[i].quote), '”');
+  t.row.style.setProperty('--sweep', `${sweepOf(i)}ms`);
+  t.row.classList.toggle('missing', verdicts[i] === 'quote not found in the cited passage');
+  t.row.classList.add('open');
+  if (!sweep) t.row.classList.add('lit');
+}
+
+function unspotlight() {
+  stage.classList.remove('focus');
+  for (const t of ties) {
+    t.line.classList.remove('current');
+    t.g?.classList.remove('current');
+    t.row?.classList.remove('open', 'lit', 'missing');
+  }
+}
+
+function decide(i, why) {
+  const t = ties[i], said = why ? (T.reasons[why] || why) : '';
+  verdicts[i] = why;
+  t.line.querySelector('.mark svg').innerHTML = why ? CROSS : CHECK;
+  t.line.querySelector('.state').textContent = why ? T.struckState + said : T.backedState;
+  const reason = t.line.querySelector('.reason');
   reason.textContent = said;
   reason.hidden = !why;
-  void line.offsetWidth;  // lay the mark out undrawn first, so its stroke animates in
-  line.dataset.state = why ? 'dropped' : 'kept';
+  void t.line.offsetWidth;  // lay the mark and reason out first, so they animate in
+  t.line.dataset.state = why ? 'dropped' : 'kept';
+  t.g?.classList.add(why ? 'cut' : 'kept');
+  if (why === 'quote not found in the cited passage') t.row?.classList.add('missing');
+}
+
+function clearStage() {
+  clearInterval(clock);
+  saying++;
+  for (const li of rail.children) {
+    li.dataset.state = 'waiting';
+    li.querySelector('.detail').textContent = '';
+  }
+  rail.hidden = true;
+  narration.textContent = '';
+  narration.classList.remove('swap');
+  stage.hidden = true;
+  stage.classList.remove('focus', 'drafting');
+  threads.replaceChildren();
+  lines.replaceChildren();
+  sourceList.replaceChildren();
+  sources.hidden = true;
+  sources.classList.remove('reading');
+  silence.hidden = true;
+  silence.classList.remove('shown');
+  failure.hidden = true;
+  access.hidden = true;
+  runBox.classList.remove('leaving');
+  body.classList.remove('silent', 'settled');
+  drafted = [];
+  ties = [];
+  verdicts = [];
+  settled = false;
 }
 
 function fail(message) {
-  const active = stepList.querySelector('[data-state="active"]');
-  if (active) step(active.dataset.step, 'failed', 'Falló');
-  failure.textContent = `No se pudo responder (${message}). Pulsa Preguntar para intentarlo otra vez.`;
+  const active = rail.querySelector('[data-state="active"]');
+  if (active) step(active.dataset.step, 'failed', T.failed);
+  sources.classList.remove('reading');
+  stage.classList.remove('drafting');
+  say('');
+  failure.textContent = T.failure(message);
   failure.hidden = false;
 }
 
 function ask(text, fresh) {
-  const asked = text.trim();
+  const asked = text.trim().replace(/\s+/g, ' ');
   if (!asked) return;
   const id = ++run;
+  const pause = async (ms) => {
+    await sleep(ms);
+    if (id !== run) throw STALE;
+  };
   if (source) source.close();
   input.value = asked;
+  input.blur();
   history.replaceState(null, '', `?q=${encodeURIComponent(asked)}`);
+  const first = !body.classList.contains('asked');
+  body.classList.add('asked');
+  if (!first) runBox.classList.add('leaving');
 
-  for (const li of stepList.children) step(li.dataset.step, 'waiting');
-  stepList.hidden = false;
-  sources.hidden = true;
-  sourceList.replaceChildren();
-  proof.hidden = true;
-  question.textContent = asked;
-  key.hidden = true;
-  lines.replaceChildren();
-  silence.hidden = true;
-  failure.hidden = true;
-  step('search', 'active');
+  let started = 0, passages = [];
+  if (PUBLIC && !ANSWERS[asked]) {  // the public demo only has the example answers
+    queue = pause(first ? PACE.collapse : 300).then(() => {
+      clearStage();
+      access.hidden = false;
+    }).catch(ignoreStale);
+    return;
+  }
+  queue = pause(first ? PACE.collapse : 300).then(() => {
+    clearStage();
+    rail.hidden = false;
+    step('search', 'active');
+    say(T.searching(TOTAL));
+    started = performance.now();
+  }).catch(ignoreStale);
 
-  let passages = [], drafted = [];
-  queue = Promise.resolve();
-  source = new EventSource(`/ask?q=${encodeURIComponent(asked)}${fresh ? '&fresh=1' : ''}`);
-  const on = (name, handle) => source.addEventListener(name, (e) => {
-    if (name === 'done' || name === 'failed') source.close();  // otherwise EventSource reconnects and asks again
-    const data = JSON.parse(e.data);
-    queue = queue.then(() => (id === run ? handle(data) : undefined));
-  });
+  arrived = new Set();
+  const handlers = {};
+  const on = (name, handle) => { handlers[name] = handle; };
+  const deliver = (name, data) => {
+    arrived.add(name);
+    if (ticking && ENDS[ticking] === name) clearInterval(clock);
+    queue = queue.then(() => (id === run ? handlers[name](data) : undefined)).catch(ignoreStale);
+  };
 
   on('passages', async (d) => {
+    await pause(started + PACE.search - performance.now());
     passages = d.passages;
     sourceList.replaceChildren(...passages.map((p, i) => sourceItem(p, i + 1, passages.slice(0, i).some((q) => q.url === p.url))));
+    stage.hidden = false;
     sources.hidden = false;
-    step('search', 'done', count(passages.length, 'pasaje', 'pasajes'));
+    step('search', 'done', count(passages.length, T.passage));
     step('draft', 'active');
-    await sleep(500);
+    say(T.drafting(passages.length));
+    await pause(passages.length * 60 + 400);
+    sources.classList.add('reading');
+    stage.classList.add('drafting');
+    await pause(PACE.read);
   });
 
   on('draft', async (d) => {
     drafted = d.sentences;
-    step('draft', 'done', count(drafted.length, 'frase', 'frases'));
-    proof.hidden = false;
-    stepList.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
-    if (!drafted.length) return;
-    lines.replaceChildren(...drafted.map((s) => lineItem(s, passages[s.source - 1])));
-    key.hidden = false;
+    sources.classList.remove('reading');
+    stage.classList.remove('drafting');
+    if (!drafted.length) {
+      step('draft', 'done', T.noSentence);
+      step('verify', 'done', T.nothingToCheck);
+      say('');
+      await pause(PACE.hush);
+      return;
+    }
+    step('draft', 'done', count(drafted.length, T.sentence));
+    lines.replaceChildren(...drafted.map(lineItem));
+    ties = drafted.map((s, i) => tie(i));
     step('verify', 'active');
-    await sleep(1100);
+    say(T.checking);
+    for (const line of lines.children) {
+      line.classList.add('shown');
+      await pause(PACE.line);
+    }
+    for (const t of ties) {
+      t.g?.classList.add('drafted');
+      t.row?.classList.add('claimed');
+    }
+    await pause(PACE.drafted);
   });
 
   on('verdicts', async (d) => {
-    const shown = [...lines.children];
     for (const [i, why] of d.dropped.entries()) {
-      shown[i].dataset.state = 'checking';
-      await sleep(450);
-      if (id !== run) return;
-      decide(shown[i], why);
-      await sleep(why ? 700 : 350);
+      spotlight(i);
+      await pause(PACE.open);
+      ties[i].g?.classList.add('pulled');
+      ties[i].row?.classList.add('lit');
+      await pause(ties[i].row ? Math.max(PACE.decide, sweepOf(i) + 150) : PACE.decide);
+      decide(i, why);
+      await pause(why ? PACE.dropped : PACE.kept);
+      unspotlight();
+      await pause(PACE.close);
     }
-    const kept = d.dropped.filter((why) => !why).length;
-    const struck = d.dropped.length - kept;
-    const parts = [kept && count(kept, 'respaldada', 'respaldadas'), struck && count(struck, 'tachada', 'tachadas')];
-    step('verify', 'done', parts.filter(Boolean).join(', ') || 'Nada que comprobar');
+    const kept = d.dropped.filter((why) => !why).length, struck = d.dropped.length - kept;
+    const parts = [kept && count(kept, T.backed), struck && count(struck, T.struck)];
+    step('verify', 'done', parts.filter(Boolean).join(', ') || T.nothingToCheck);
   });
 
-  on('done', (d) => {
-    drafted.forEach((s, i) => {
-      if (lines.children[i]?.dataset.state === 'kept') $(`source-${s.source}`)?.classList.add('cited');
-    });
-    if (d.silent) {
-      silenceWhy.textContent = drafted.length
-        ? 'Ninguna frase ha pasado la comprobación de citas, así que no se afirma nada.'
-        : 'Los pasajes que ha encontrado la búsqueda no responden a la pregunta.';
-      silence.hidden = false;
+  on('done', async (d) => {
+    settled = true;
+    body.classList.add('settled');
+    for (const t of ties) {
+      if (t.line.dataset.state === 'kept') t.row?.classList.add('cited');
+      t.line.tabIndex = 0;
     }
+    if (!d.silent) {
+      say(verdicts.some(Boolean) ? T.settledStruck : T.settledAll);
+      return;
+    }
+    silenceWhy.textContent = drafted.length ? T.allStruck : T.nothingFound(passages.length);
+    body.classList.add('silent');
+    await pause(PACE.hush);
+    silence.hidden = false;
+    void silence.offsetWidth;
+    silence.classList.add('shown');
   });
 
   on('failed', (d) => fail(d.message));
 
+  if (PUBLIC) {
+    for (const [name, data] of ANSWERS[asked]) deliver(name, data);
+    return;
+  }
+  source = new EventSource(`ask?q=${encodeURIComponent(asked)}${fresh ? '&fresh=1' : ''}`);
+  for (const name of Object.keys(handlers)) source.addEventListener(name, (e) => {
+    if (name === 'done' || name === 'failed') source.close();  // otherwise EventSource reconnects and asks again
+    deliver(name, JSON.parse(e.data));
+  });
   source.addEventListener('error', () => {
     if (id !== run || source.readyState === EventSource.CLOSED) return;
     source.close();
-    queue = queue.then(() => fail('se ha cortado la conexión con cite-or-silence serve'));
+    queue = queue.then(() => fail(T.cutOff));
   });
 }
 
-// Shift+Enter or Shift+click asks the model again instead of replaying the answer from this session.
-addEventListener('keydown', (e) => { again = e.shiftKey; }, true);
-addEventListener('pointerdown', (e) => { again = e.shiftKey; }, true);
-form.addEventListener('submit', (e) => { e.preventDefault(); ask(input.value, again); });
-for (const example of document.querySelectorAll('.example')) {
-  example.addEventListener('click', (e) => ask(example.textContent, e.shiftKey));
+function reset() {
+  run++;
+  if (source) source.close();
+  queue = Promise.resolve();
+  clearStage();
+  body.classList.remove('asked');
+  input.value = '';
+  history.replaceState(null, '', location.pathname);
+  input.focus();
 }
 
-const params = new URLSearchParams(location.search);
-if (params.get('q')) ask(params.get('q'), params.has('fresh'));
-else input.focus();
+// Shift+Enter or Shift+click asks the model again instead of replaying the saved answer.
+addEventListener('keydown', (e) => { again = e.shiftKey; }, true);
+addEventListener('pointerdown', (e) => { again = e.shiftKey; }, true);
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.isComposing) {
+    e.preventDefault();
+    ask(input.value, e.shiftKey);
+  } else if (e.key === 'Escape') {
+    input.blur();
+  }
+});
+form.addEventListener('submit', (e) => { e.preventDefault(); ask(input.value, again); });
+for (const b of document.querySelectorAll('[data-lang]')) b.addEventListener('click', () => translate(b.dataset.lang));
+$('home').addEventListener('click', (e) => { e.preventDefault(); reset(); });
+
+async function start() {
+  if (PUBLIC) {
+    body.classList.add('public');
+    try { ANSWERS = await (await fetch('answers.json')).json(); } catch {}
+  }
+  const params = new URLSearchParams(location.search);
+  if (params.get('q')) {
+    body.classList.add('asked', 'instant');
+    requestAnimationFrame(() => requestAnimationFrame(() => body.classList.remove('instant')));
+    ask(params.get('q'), params.has('fresh'));
+  } else {
+    input.focus();
+  }
+}
+translate(lang);
+start();
 </script>
 </body>
 </html>

@@ -6,11 +6,16 @@ read, not republish. Steps reach the page as server-sent events while they happe
 answer is saved (under data/, gitignored: it holds SEP quotes), so asking the same question again
 replays the same answer at once, also after a restart, which keeps a recorded demo repeatable;
 fresh=1 asks the model again and replaces the saved answer.
+
+`export` writes the public demo instead: the same page, static, replaying only the saved answers to
+the example questions, with every quote removed so nothing of the SEP's text is published. Titles,
+section headings and links to plato.stanford.edu stay: the SEP's terms allow linking.
 """
 
 import html
 import json
 import re
+import shutil
 import threading
 from collections.abc import Callable, Iterator
 from functools import cache
@@ -25,8 +30,24 @@ from cite_or_silence.provider import Provider
 from cite_or_silence.verify import verify
 
 PAGE = Path(__file__).with_name("web.html")
+STATIC = Path(__file__).with_name("static")  # the logo files, also used by the README
+TYPES = {".svg": "image/svg+xml", ".png": "image/png"}
 
 Event = tuple[str, dict]
+
+# The questions the page offers, per language; the public demo can answer only these.
+EXAMPLES = {
+    "es": [
+        "¿Qué ilustra la alegoría de la caverna de Platón?",
+        "¿Qué es la suerte moral según Williams y Nagel?",
+        "¿Qué opinaba Platón de los smartphones?",
+    ],
+    "en": [
+        "What does Plato's allegory of the cave illustrate?",
+        "What is moral luck according to Williams and Nagel?",
+        "What did Plato think of smartphones?",
+    ],
+}
 
 
 def steps(question: str, retrieve: Callable[[str], list[Passage]], model: Provider, describe: Callable[[Passage], dict]) -> Iterator[Event]:
@@ -87,17 +108,51 @@ class Session:
                 self.saved.write_text(json.dumps(self.answers, ensure_ascii=False, indent=1))
 
 
+def render(facts: dict[str, str]) -> str:
+    """The page with its __NAME__ placeholders filled in (escaped: they go into attributes)."""
+    page = PAGE.read_text(encoding="utf-8")
+    for name, value in (facts | {"EXAMPLES": json.dumps(EXAMPLES, ensure_ascii=False)}).items():
+        page = page.replace(f"__{name}__", html.escape(value))
+    return page
+
+
+def public(events: list[Event]) -> list[Event]:
+    """An answer without SEP text: the draft loses its quotes; passages never carried any."""
+    out = []
+    for name, data in events:
+        if name == "draft":
+            data = {"sentences": [{k: v for k, v in s.items() if k != "quote"} for s in data["sentences"]]}
+        out.append((name, data))
+    return out
+
+
+def export(session: Session, out: Path, facts: dict[str, str]) -> int:
+    """Write the public demo to out: page, logo and the example answers (asking the model for any
+    not saved yet). Returns how many answers it holds."""
+    answers = {q: public(list(session.ask(q))) for questions in EXAMPLES.values() for q in questions}
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "index.html").write_text(render(facts | {"MODE": "public"}), encoding="utf-8")
+    (out / "answers.json").write_text(json.dumps(answers, ensure_ascii=False), encoding="utf-8")
+    shutil.copytree(STATIC, out / "static", dirs_exist_ok=True)
+    return len(answers)
+
+
+def index_facts(model: Provider, entries: int, passages: int) -> dict[str, str]:
+    """What the page quotes: the model, and the size of the index while it searches."""
+    return {"MODEL": model.name, "ENTRIES": str(entries), "PASSAGES": str(passages)}
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         url = urlparse(self.path)
         if url.path == "/":
-            page = PAGE.read_text(encoding="utf-8").replace("__MODEL__", html.escape(self.server.session.model.name))
-            body = page.encode()
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
+            self.reply(render(self.server.facts | {"MODE": "live"}).encode(), "text/html; charset=utf-8")
+        elif url.path.startswith("/static/"):
+            path = STATIC / url.path.removeprefix("/static/")
+            if path.parent != STATIC or path.suffix not in TYPES or not path.is_file():
+                self.send_error(404)
+                return
+            self.reply(path.read_bytes(), TYPES[path.suffix])
         elif url.path == "/ask":
             query = parse_qs(url.query)
             question = query.get("q", [""])[0].strip()
@@ -109,6 +164,13 @@ class Handler(BaseHTTPRequestHandler):
             self.stream(self.server.session.ask(question, fresh))
         else:
             self.send_error(404)
+
+    def reply(self, body: bytes, content_type: str) -> None:
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def stream(self, events: Iterator[Event]) -> None:
         self.send_response(200)
@@ -140,13 +202,14 @@ class Handler(BaseHTTPRequestHandler):
 class Server(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, port: int, session: Session):
+    def __init__(self, port: int, session: Session, facts: dict[str, str]):
         super().__init__(("127.0.0.1", port), Handler)
-        self.session = session
+        self.session, self.facts = session, facts
 
 
-def serve(session: Session, port: int) -> None:
-    with Server(port, session) as server:
+def serve(session: Session, port: int, entries: int = 0, passages: int = 0) -> None:
+    """entries and passages: the size of the index, which the page quotes while it searches."""
+    with Server(port, session, index_facts(session.model, entries, passages)) as server:
         print(f"cite-or-silence on http://127.0.0.1:{port} ({session.model.name}), {len(session.answers)} saved answers.", flush=True)
         print("A question asked before replays its saved answer; Shift+Enter or Shift+click asks the model again. Ctrl+C stops.", flush=True)
         try:

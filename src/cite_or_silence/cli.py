@@ -98,13 +98,26 @@ def cmd_bench(args) -> None:
     print(bench.report(results))
 
 
-def cmd_serve(args) -> None:
+def page_session(args):
+    """The page's session (answers saved per model, shared by serve and export) and the index size."""
     con = search.connect(DB, read_only=True)
     retrieve = retriever(con, args.k)
-    retrieve("warm-up")  # loads the embedding model now, not on the first question
     llm = provider.get(args.provider)
     saved = DATA / "serve" / f"{llm.name.replace(':', '_')}.json"
-    web.serve(web.Session(retrieve, llm, web.describer(con, RAW), saved), args.port)
+    passages, entries = con.execute("SELECT count(*), count(DISTINCT entry) FROM chunks").fetchone()
+    return web.Session(retrieve, llm, web.describer(con, RAW), saved), entries, passages
+
+
+def cmd_serve(args) -> None:
+    session, entries, passages = page_session(args)
+    session.retrieve("warm-up")  # loads the embedding model now, not on the first question
+    web.serve(session, args.port, entries, passages)
+
+
+def cmd_export(args) -> None:
+    session, entries, passages = page_session(args)
+    n = web.export(session, Path(args.out), web.index_facts(session.model, entries, passages))
+    print(f"Public demo in {args.out}/ ({n} answers, no SEP text). Serve it as static files.")
 
 
 def cmd_recall(args) -> None:
@@ -184,6 +197,11 @@ def main() -> None:
     sv.add_argument("--port", type=int, default=8765)
     sv.add_argument("-k", type=int, default=10)
     sv.set_defaults(func=cmd_serve)
+    ex = sub.add_parser("export", help="write the public demo: static page replaying the example answers without quotes")
+    ex.add_argument("out", nargs="?", default="site")
+    ex.add_argument("--provider", choices=("codex", "ollama"), default="codex")
+    ex.add_argument("-k", type=int, default=10)
+    ex.set_defaults(func=cmd_export)
     rc = sub.add_parser("recall", help="Recall@k of every search mode against eval/questions.jsonl")
     rc.add_argument("-k", type=int, default=5)
     rc.add_argument("--misses", nargs="?", const="rerank", choices=search.MODES, help="list the questions this mode misses (default: rerank)")

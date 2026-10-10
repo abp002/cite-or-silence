@@ -1,5 +1,8 @@
+import json
+import re
+
 from cite_or_silence.answer import Passage
-from cite_or_silence.web import Session, steps
+from cite_or_silence.web import EXAMPLES, Session, export, steps
 
 # Invented passages: nothing from the SEP goes into tests.
 PASSAGES = [
@@ -77,3 +80,23 @@ def test_a_saved_answer_replays_in_a_new_session_without_the_model(tmp_path):
 
     again = Session(lambda q: [], Unreachable(), lambda p: {}, saved)
     assert list(again.ask("¿Qué enseñan las tormentas?")) == asked
+
+
+def test_the_public_demo_publishes_no_quote_and_fills_every_placeholder(tmp_path):
+    quote = 'argued that "every storm teaches patience" to those who wait'
+    model = Model([{"text": "Las tormentas enseñan paciencia.", "source": 1, "quote": quote}], backed={1})
+    describe = lambda p: {"title": p.entry, "url": f"https://plato.stanford.edu/entries/{p.entry}/#{p.anchor}"}
+    session = Session(lambda q: PASSAGES, model, describe)
+    n = export(session, tmp_path / "site", {"MODEL": "fake", "ENTRIES": "2", "PASSAGES": "2"})
+
+    assert n == sum(len(qs) for qs in EXAMPLES.values())
+    published = "".join(f.read_text() for f in (tmp_path / "site").rglob("*") if f.is_file())
+    assert "every storm teaches patience" not in published
+    for passage in PASSAGES:
+        assert passage.text not in published
+    page = (tmp_path / "site" / "index.html").read_text()
+    assert 'data-mode="public"' in page
+    assert re.search(r"__[A-Z]+__", page) is None
+    answers = json.loads((tmp_path / "site" / "answers.json").read_text())
+    draft = dict(answers[EXAMPLES["es"][0]])["draft"]
+    assert draft == {"sentences": [{"text": "Las tormentas enseñan paciencia.", "source": 1}]}

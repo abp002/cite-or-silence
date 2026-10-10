@@ -8,7 +8,7 @@ though the SEP is in English. Public repo, written in English.
 ## QA
 Nivel: activo
 
-Bitácora: ALE
+Bitácora: COS
 
 ## Licensing rule (do not break)
 The SEP terms allow crawling each entry for indexing, not redistributing it (only links, or closed
@@ -60,8 +60,25 @@ Test fixtures use invented text that only mimics SEP markup.
   and `verify` are called separately there. The page is `src/cite_or_silence/web.html` (no external
   dependencies, read on every request). Complete answers are saved in `data/serve/<provider>.json` and
   replayed for a question asked before, so a recorded demo stays repeatable; Shift+Enter or `fresh=1`
-  asks the model again. The page's look: a printer's proof (draft in proof blue, kept sentences inked,
-  struck ones crossed in red, quotes in the margin).
+  asks the model again. The page is made for the demo video: a reading room at night (dark green, Big
+  Caslon and Hoefler Text, macOS fonts). Each draft sentence is tied by an SVG thread to the passage it
+  cites; checking turns the thread brass and inks the sentence, or cuts it in red and strikes the
+  sentence; silence dims the page. The page paces each step with minimum times (`PACE`), so a saved
+  answer replays as slowly as a live one; step clocks only run while the model is really working.
+- The page speaks Spanish and English (ES|EN in the header; `?lang=`, then localStorage, then the
+  browser): every string is in `TEXT` in web.html, and the example questions per language are
+  `web.EXAMPLES` (injected as `__EXAMPLES__`). The header links GitHub, LinkedIn and the portfolio; the
+  footer names the SEP as source and the model.
+- `export`: the public demo as static files in `site/` (gitignored, publishable). The same page with
+  `data-mode="public"` replays `answers.json`: only the example questions in both languages (asked to
+  the model if not saved yet), with every quote removed by `web.public`. Passages show title, section
+  and a link to plato.stanford.edu, never text; any other question shows "Request full access"
+  (LinkedIn). `test_the_public_demo_publishes_no_quote...` guards the licensing rule.
+- Logo: `src/cite_or_silence/static/` (served under `/static/`). `symbol.svg` (quote mark with its
+  thread), `favicon.svg` (the same on a green tile) and `wordmark.svg` (the stacked name, small in the
+  top-left corner; its thread draws itself on load with CSS inside the SVG). Traced from images Alejandro generated; the
+  wordmark's thread is a single stroke along the original's centerline, not a traced outline, so it
+  can be drawn.
 - Known limit: a sentence about the question itself ("the premise is wrong") has no quote to back it,
   so verification drops the explicit correction of a false premise.
 
@@ -86,4 +103,5 @@ The README must say which model produced each number.
 - `uv run cite-or-silence recall [-k 5] [--misses MODE]`
 - `uv run cite-or-silence ask "question" [--provider codex|ollama] [-k 10]`
 - `uv run cite-or-silence serve [--provider codex|ollama] [--port 8765]`
+- `uv run cite-or-silence export [site] [--provider codex|ollama]` (public demo, no SEP text)
 - `uv run cite-or-silence bench [--ids s01,m02] [--limit N] [--provider codex|ollama]` (~1 h for all)
