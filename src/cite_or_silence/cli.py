@@ -72,6 +72,24 @@ def retriever(con, k: int = 10):
     return retrieve
 
 
+def tracer(con, k: int = 10):
+    """The page's retrieval: the same diverse search as `retriever`, also keeping how it chose."""
+    model = embed.load_model()
+
+    def retrieve(question: str) -> web.Retrieval:
+        vector = embed.encode(model, [question])[0]
+        scored = search.dense_scored(con, vector)
+        fates = search.cap_fates([i for i, _ in scored], k)
+        candidates = answer.passages_of(con, [i for i, _ in scored])
+        return web.Retrieval(
+            [p for p, fate in zip(candidates, fates) if fate == "kept"],
+            vector.tolist(),
+            [(p, score, fate) for p, (_, score), fate in zip(candidates, scored, fates)],
+        )
+
+    return retrieve
+
+
 def cmd_ask(args) -> None:
     con = search.connect(DB, read_only=True)
     passages = retriever(con, args.k)(args.question)
@@ -101,7 +119,7 @@ def cmd_bench(args) -> None:
 def page_session(args):
     """The page's session (answers saved per model, shared by serve and export) and the index size."""
     con = search.connect(DB, read_only=True)
-    retrieve = retriever(con, args.k)
+    retrieve = tracer(con, args.k)
     llm = provider.get(args.provider)
     saved = DATA / "serve" / f"{llm.name.replace(':', '_')}.json"
     passages, entries = con.execute("SELECT count(*), count(DISTINCT entry) FROM chunks").fetchone()

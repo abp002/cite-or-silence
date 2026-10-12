@@ -56,7 +56,7 @@ Test fixtures use invented text that only mimics SEP markup.
   sentence against the gold sections + the retrieved passages (supported / contradicted / unbacked).
   Rules fixed before the first run. Results in `data/bench/<provider>/<qid>.json`, resumable.
 - `serve`: local demo page on 127.0.0.1:8765 only (it shows SEP text). Stdlib `http.server`; each step
-  (passages, draft, verdicts, done) reaches the page as a server-sent event, which is why `answer.draft`
+  (pool, passages, draft, verdicts, done) reaches the page as a server-sent event, which is why `answer.draft`
   and `verify` are called separately there. The page is `src/cite_or_silence/web.html` (no external
   dependencies, read on every request). Complete answers are saved in `data/serve/<provider>.json` and
   replayed for a question asked before, so a recorded demo stays repeatable; Shift+Enter or `fresh=1`
@@ -65,6 +65,11 @@ Test fixtures use invented text that only mimics SEP markup.
   cites; checking turns the thread brass and inks the sentence, or cuts it in red and strikes the
   sentence; silence dims the page. The page paces each step with minimum times (`PACE`), so a saved
   answer replays as slowly as a live one; step clocks only run while the model is really working.
+- `pool` feeds the folded "Under the hood" panel shown once an answer settles: the first 48 values of
+  the question's vector, and the 50 dense candidates with cosine similarity and fate (`kept`, `capped`
+  by the per-entry cap, `spare` once ten are in; `search.cap_fates`). `cli.tracer` is the page's
+  retrieval: same result as `diverse`, keeping how it chose. Answers saved before `pool` existed get
+  one on replay by searching again, without the model.
 - The page speaks Spanish and English (ES|EN in the header; `?lang=`, then localStorage, then the
   browser): every string is in `TEXT` in web.html, and the example questions per language are
   `web.EXAMPLES` (injected as `__EXAMPLES__`). The header links GitHub, LinkedIn and the portfolio; the
@@ -74,6 +79,11 @@ Test fixtures use invented text that only mimics SEP markup.
   the model if not saved yet), with every quote removed by `web.public`. Passages show title, section
   and a link to plato.stanford.edu, never text; any other question shows "Request full access"
   (LinkedIn). `test_the_public_demo_publishes_no_quote...` guards the licensing rule.
+- Demo video: the local page recorded with the quotes in view, one per language on YouTube (`VIDEOS` in
+  web.html; ES 1:23, EN 1:16; only short quotes on screen, like the README). The public page offers it
+  under the examples and in the "Request full access" box: a `<dialog>` whose
+  youtube-nocookie iframe is made on opening and removed on closing, so nothing from YouTube loads
+  before someone asks and closing stops it. Live mode hides all of it.
 - README: `README.md` (English, the one GitHub opens) and `README.es.md`, with a language switch at
   the top. They go together: a change to one goes into the other. Each embeds its video as a GitHub
   attachment, a bare `https://github.com/user-attachments/assets/…` line that GitHub turns into a

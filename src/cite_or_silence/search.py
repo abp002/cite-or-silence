@@ -72,13 +72,19 @@ def build_index(con: duckdb.DuckDBPyConnection, chunks: list[dict], vectors: np.
     con.execute("PRAGMA create_fts_index('chunks', 'id', 'heading', 'text', stemmer = 'english', overwrite = 1)")
 
 
-def dense(con: duckdb.DuckDBPyConnection, vector: np.ndarray, n: int = POOL) -> list[str]:
+def dense_scored(con: duckdb.DuckDBPyConnection, vector: np.ndarray, n: int = POOL) -> list[tuple[str, float]]:
+    """The n nearest chunks with their cosine similarity to the vector, nearest first."""
     dim = len(vector)
     rows = con.execute(
-        f"SELECT id FROM chunks ORDER BY array_cosine_distance(emb, ?::FLOAT[{dim}]) LIMIT ?",
-        [vector.astype(np.float32).tolist(), n],
+        f"""SELECT id, 1 - array_cosine_distance(emb, ?::FLOAT[{dim}]) FROM chunks
+            ORDER BY array_cosine_distance(emb, ?::FLOAT[{dim}]) LIMIT ?""",
+        [vector.astype(np.float32).tolist()] * 2 + [n],
     ).fetchall()
-    return [r[0] for r in rows]
+    return [(r[0], float(r[1])) for r in rows]
+
+
+def dense(con: duckdb.DuckDBPyConnection, vector: np.ndarray, n: int = POOL) -> list[str]:
+    return [i for i, _ in dense_scored(con, vector, n)]
 
 
 def bm25(con: duckdb.DuckDBPyConnection, query: str, n: int = POOL) -> list[str]:
@@ -90,18 +96,26 @@ def bm25(con: duckdb.DuckDBPyConnection, query: str, n: int = POOL) -> list[str]
     return [r[0] for r in rows]
 
 
-def cap_per_entry(ids: list[str], k: int, cap: int = PER_ENTRY) -> list[str]:
-    """The first k ids, skipping any whose entry already has cap ids in; order is kept."""
+def cap_fates(ids: list[str], k: int, cap: int = PER_ENTRY) -> list[str]:
+    """What the cap does to each id, in order: "kept" (among the first k ids whose entry had fewer
+    than cap in), "capped" (its entry already had cap) or "spare" (k were already kept)."""
     taken: dict[str, int] = {}
-    kept = []
+    fates = []
     for i in ids:
         entry = i.split("#", 1)[0]
-        if taken.get(entry, 0) < cap:
+        if fates.count("kept") == k:
+            fates.append("spare")
+        elif taken.get(entry, 0) < cap:
             taken[entry] = taken.get(entry, 0) + 1
-            kept.append(i)
-            if len(kept) == k:
-                break
-    return kept
+            fates.append("kept")
+        else:
+            fates.append("capped")
+    return fates
+
+
+def cap_per_entry(ids: list[str], k: int, cap: int = PER_ENTRY) -> list[str]:
+    """The first k ids, skipping any whose entry already has cap ids in; order is kept."""
+    return [i for i, fate in zip(ids, cap_fates(ids, k, cap)) if fate == "kept"]
 
 
 def rerank(con: duckdb.DuckDBPyConnection, query: str, ids: list[str], scorer: Scorer) -> list[str]:

@@ -1,4 +1,4 @@
-"""A local page to ask questions and watch each step: the passages retrieval finds, the model's
+"""A local page to ask questions and watch each step: how retrieval chose its passages, the model's
 draft with a quote per sentence, and verification keeping or striking every sentence.
 
 Listens on 127.0.0.1 only: the page shows SEP passages and quotes, which the SEP's terms let you
@@ -18,6 +18,7 @@ import re
 import shutil
 import threading
 from collections.abc import Callable, Iterator
+from dataclasses import dataclass
 from functools import cache
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -27,6 +28,7 @@ import duckdb
 
 from cite_or_silence.answer import Passage, draft
 from cite_or_silence.provider import Provider
+from cite_or_silence.search import PER_ENTRY
 from cite_or_silence.verify import verify
 
 PAGE = Path(__file__).with_name("web.html")
@@ -34,6 +36,16 @@ STATIC = Path(__file__).with_name("static")  # the logo files, also used by the 
 TYPES = {".svg": "image/svg+xml", ".png": "image/png"}
 
 Event = tuple[str, dict]
+HEAD = 48  # how many of the question's embedding values the page draws
+
+
+@dataclass
+class Retrieval:
+    """What the search did for one question: the passages it kept, and how it got to them."""
+
+    passages: list[Passage]
+    vector: list[float]  # the question's embedding
+    candidates: list[tuple[Passage, float, str]]  # the dense pool, nearest first: passage, similarity, fate
 
 # The questions the page offers, per language; the public demo can answer only these.
 EXAMPLES = {
@@ -50,9 +62,22 @@ EXAMPLES = {
 }
 
 
-def steps(question: str, retrieve: Callable[[str], list[Passage]], model: Provider, describe: Callable[[Passage], dict]) -> Iterator[Event]:
-    """The answer in the order the page shows it: passages, draft, verdicts, done."""
-    passages = retrieve(question)
+def pool(found: Retrieval, describe: Callable[[Passage], dict]) -> dict:
+    """The search as the page shows it: the start of the question's vector, then every candidate
+    with its similarity and why it was kept or left out. Like the passages, no SEP text."""
+    return {
+        "dims": len(found.vector),
+        "head": [round(x, 3) for x in found.vector[:HEAD]],
+        "cap": PER_ENTRY,
+        "candidates": [describe(p) | {"score": round(score, 3), "fate": fate} for p, score, fate in found.candidates],
+    }
+
+
+def steps(question: str, retrieve: Callable[[str], Retrieval], model: Provider, describe: Callable[[Passage], dict]) -> Iterator[Event]:
+    """The answer in the order the page shows it: pool, passages, draft, verdicts, done."""
+    found = retrieve(question)
+    passages = found.passages
+    yield "pool", pool(found, describe)
     yield "passages", {"passages": [describe(p) for p in passages]}
     sentences = draft(question, passages, model)
     yield "draft", {"sentences": [{"text": s.text, "source": s.source, "quote": s.quote} for s in sentences]}
@@ -85,7 +110,7 @@ def describer(con: duckdb.DuckDBPyConnection, raw: Path) -> Callable[[Passage], 
 class Session:
     """One model and one database connection, so one answer at a time; answers saved for replay."""
 
-    def __init__(self, retrieve: Callable[[str], list[Passage]], model: Provider, describe: Callable[[Passage], dict], saved: Path | None = None):
+    def __init__(self, retrieve: Callable[[str], Retrieval], model: Provider, describe: Callable[[Passage], dict], saved: Path | None = None):
         self.retrieve, self.model, self.describe, self.saved = retrieve, model, describe, saved
         self.lock = threading.Lock()
         self.answers: dict[str, list[Event]] = {}
@@ -96,16 +121,24 @@ class Session:
         key = " ".join(question.split())
         with self.lock:
             if not fresh and key in self.answers:
-                yield from self.answers[key]
+                events = self.answers[key]
+                if "pool" not in dict(events):  # saved before the page showed the search: search again, no model
+                    events = [("pool", pool(self.retrieve(key), self.describe)), *events]
+                    self.answers[key] = events
+                    self.save()
+                yield from events
                 return
             events = []
             for event in steps(key, self.retrieve, self.model, self.describe):
                 events.append(event)
                 yield event
             self.answers[key] = events  # only complete answers: a failed one is asked again
-            if self.saved:
-                self.saved.parent.mkdir(parents=True, exist_ok=True)
-                self.saved.write_text(json.dumps(self.answers, ensure_ascii=False, indent=1))
+            self.save()
+
+    def save(self) -> None:
+        if self.saved:
+            self.saved.parent.mkdir(parents=True, exist_ok=True)
+            self.saved.write_text(json.dumps(self.answers, ensure_ascii=False, indent=1))
 
 
 def render(facts: dict[str, str]) -> str:

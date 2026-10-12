@@ -1,6 +1,6 @@
 import numpy as np
 
-from cite_or_silence.search import build_index, bm25, cap_per_entry, connect, dense, rrf, search
+from cite_or_silence.search import build_index, bm25, cap_fates, cap_per_entry, connect, dense, dense_scored, rrf, search
 
 
 def test_rrf_rewards_agreement_over_a_single_top_spot():
@@ -30,6 +30,9 @@ def test_index_answers_both_kinds_of_search(tmp_path):
     build_index(con, chunks, vectors)
 
     assert dense(con, np.array([0.1, 0.9, 0.2]), 2) == ["x#Two:0", "y#Three:0"]
+    scored = dense_scored(con, np.array([0.6, 0.8, 0.0]), 3)
+    assert [i for i, _ in scored] == ["x#Two:0", "x#One:0", "y#Three:0"]
+    assert np.allclose([s for _, s in scored], [0.8, 0.6, 0.0], atol=1e-6)  # similarity, not distance
     assert bm25(con, "¿Qué hacen las tides?", 5) == ["x#One:0"]  # english stemming: tides -> tide
     assert search(con, "dough", np.array([0, 0, 1.0]), "hybrid", 2) == ["x#Two:0", "y#Three:0"]
 
@@ -59,3 +62,9 @@ def test_cap_per_entry_lets_other_entries_in():
     ids = ["a#1:0", "a#2:0", "a#3:0", "b#1:0", "a#4:0", "c#1:0"]
     assert cap_per_entry(ids, 4, cap=2) == ["a#1:0", "a#2:0", "b#1:0", "c#1:0"]
     assert cap_per_entry(ids, 2, cap=2) == ["a#1:0", "a#2:0"]  # stops at k
+
+
+def test_cap_fates_tell_why_each_candidate_is_left_out():
+    ids = ["a#1:0", "a#2:0", "a#3:0", "b#1:0", "a#4:0", "c#1:0", "d#1:0"]
+    assert cap_fates(ids, 4, cap=2) == ["kept", "kept", "capped", "kept", "capped", "kept", "spare"]
+    assert cap_fates(ids, 2, cap=2) == ["kept", "kept", "spare", "spare", "spare", "spare", "spare"]
