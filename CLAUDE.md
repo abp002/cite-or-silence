@@ -77,9 +77,11 @@ Test fixtures use invented text that only mimics SEP markup.
 - README: `README.md` (English, the one GitHub opens) and `README.es.md`, with a language switch at
   the top. They go together: a change to one goes into the other. Each embeds its video as a GitHub
   attachment, a bare `https://github.com/user-attachments/assets/…` line that GitHub turns into a
-  player (a README takes no iframes; 10 MB cap on the free plan). The files are 1080p30 re-encodes of
-  the recordings (`ffmpeg -an -vf fps=30 -c:v libx264 -preset slow -crf 26 -tune stillimage
-  -movflags +faststart`, 6.8 MB each), uploaded from an issue draft that was never sent.
+  player (a README takes no iframes; 10 MB cap on the free plan). The player has no poster, so the
+  first frame is what shows before play: the files are 1080p30 re-encodes of the recordings that skip
+  the fade-in and open on the landing page (`ffmpeg -i <recording> -ss 0.65 -an -vf fps=30 -c:v libx264
+  -preset slow -crf 26 -tune stillimage -movflags +faststart`, ~6.8 MB each), uploaded from an issue
+  draft that was never sent.
 - Logo: `src/cite_or_silence/static/` (served under `/static/`). `symbol.svg` (quote mark with its
   thread), `favicon.svg` (the same on a green tile) and `wordmark.svg` (the stacked name, small in the
   top-left corner; its thread draws itself on load with CSS inside the SVG). Traced from images Alejandro generated; the

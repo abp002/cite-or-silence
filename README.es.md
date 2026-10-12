@@ -10,7 +10,7 @@ respuesta es **«No lo sé»**. Se puede preguntar en español; la SEP está en 
 Sin búsqueda, un tercio de lo que dice un modelo sobre filosofía no está en la SEP. Con búsqueda y
 verificación, casi nada (ver [Resultados](#resultados) y [dónde falla](#dónde-falla)).
 
-https://github.com/user-attachments/assets/951ef46d-f069-4b51-8a91-35c9ab4d587d
+https://github.com/user-attachments/assets/639c1dfb-b87b-4df7-ab13-c672d96f1cf0
 
 ## Qué se mide
 
