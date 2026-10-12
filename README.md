@@ -1,3 +1,5 @@
+<p align="right"><b>English</b> · <a href="README.es.md">Español</a></p>
+
 # cite-or-silence
 
 Ask a philosophy question, get an answer built only from the
@@ -7,6 +9,8 @@ question, the answer is **"I don't know."** Questions can be asked in Spanish; t
 
 Without retrieval, a third of what a model says about philosophy is not in the SEP. With retrieval
 and verification, almost nothing is (see [Results](#results), and [where it fails](#where-it-fails)).
+
+https://github.com/user-attachments/assets/ad268991-d63b-4ddc-a100-e4095933dd2b
 
 ## What gets measured
 

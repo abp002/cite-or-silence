@@ -74,6 +74,12 @@ Test fixtures use invented text that only mimics SEP markup.
   the model if not saved yet), with every quote removed by `web.public`. Passages show title, section
   and a link to plato.stanford.edu, never text; any other question shows "Request full access"
   (LinkedIn). `test_the_public_demo_publishes_no_quote...` guards the licensing rule.
+- README: `README.md` (English, the one GitHub opens) and `README.es.md`, with a language switch at
+  the top. They go together: a change to one goes into the other. Each embeds its video as a GitHub
+  attachment, a bare `https://github.com/user-attachments/assets/…` line that GitHub turns into a
+  player (a README takes no iframes; 10 MB cap on the free plan). The files are 1080p30 re-encodes of
+  the recordings (`ffmpeg -an -vf fps=30 -c:v libx264 -preset slow -crf 26 -tune stillimage
+  -movflags +faststart`, 6.8 MB each), uploaded from an issue draft that was never sent.
 - Logo: `src/cite_or_silence/static/` (served under `/static/`). `symbol.svg` (quote mark with its
   thread), `favicon.svg` (the same on a green tile) and `wordmark.svg` (the stacked name, small in the
   top-left corner; its thread draws itself on load with CSS inside the SVG). Traced from images Alejandro generated; the
