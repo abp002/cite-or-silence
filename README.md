@@ -88,7 +88,10 @@ explanations) caught no more bad sentences and dropped 12 good ones, so it was n
 
 1. **Fetch** every SEP entry, one request every 5 seconds (as the SEP's robots.txt asks).
 2. **Chunk** by section (§1, §2.3…) and paragraph; each chunk keeps a link to its section.
-3. **Retrieve** with multilingual embeddings plus BM25, stored in DuckDB.
+3. **Retrieve** with multilingual embeddings (bge-m3) in DuckDB: of the 50 passages nearest the question,
+   the first ten go to the model, at most two per entry. Keyword search (BM25) was measured and dropped:
+   with Spanish questions and an English encyclopedia it put the right section in the top 5 for 1 % of
+   questions, and fused with the embeddings it lowered that rate from 51 % to 37 %.
 4. **Answer and verify**: each sentence cites a chunk; a second pass checks the quote exists and
    supports the sentence. Sentences that fail are dropped.
 5. **Evaluate** on ~100 questions written before the retrieval system existed.
@@ -99,9 +102,14 @@ explanations) caught no more bad sentences and dropped 12 good ones, so it was n
 uv sync
 uv run cite-or-silence fetch      # ~2.5 h, once
 uv run cite-or-silence chunk
+uv run cite-or-silence embed      # hours: one bge-m3 vector per passage
+uv run cite-or-silence index      # loads the chunks and their vectors into DuckDB
 uv run pytest
 uv run cite-or-silence serve      # http://127.0.0.1:8765: ask, and watch each sentence get checked
 ```
+
+Answers come from Codex signed in with a ChatGPT account (`codex login`). Without one, `--provider ollama`
+runs qwen3:14b locally, with Ollama and the model pulled.
 
 The page shows the passages retrieval found, the model's draft with a quote beside every sentence,
 and verification keeping or striking each one. It only listens on your machine: it shows SEP text,

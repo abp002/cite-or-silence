@@ -94,7 +94,11 @@ explicaciones invertidas) no atrapó ninguna frase mala más y tachó 12 buenas,
 
 1. **Descargar** cada entrada de la SEP, una petición cada 5 segundos (como pide su robots.txt).
 2. **Trocear** por sección (§1, §2.3…) y párrafo; cada fragmento guarda un enlace a su sección.
-3. **Buscar** con embeddings multilingües más BM25, guardados en DuckDB.
+3. **Buscar** con embeddings multilingües (bge-m3) en DuckDB: de los 50 pasajes más cercanos a la
+   pregunta, pasan al modelo los diez primeros, con un máximo de dos por entrada. La búsqueda por
+   palabras (BM25) se midió y se descartó: con preguntas en español y una enciclopedia en inglés, solo
+   ponía la sección correcta entre las 5 primeras en el 1 % de las preguntas, y mezclada con los
+   embeddings bajaba el acierto del 51 % al 37 %.
 4. **Responder y verificar**: cada frase cita un fragmento; una segunda pasada comprueba que la cita
    existe y respalda la frase. Las frases que fallan se tachan.
 5. **Evaluar** con ~100 preguntas escritas antes de que existiera el sistema de búsqueda.
@@ -105,9 +109,14 @@ explicaciones invertidas) no atrapó ninguna frase mala más y tachó 12 buenas,
 uv sync
 uv run cite-or-silence fetch      # ~2,5 h, una sola vez
 uv run cite-or-silence chunk
+uv run cite-or-silence embed      # horas: un vector de bge-m3 por pasaje
+uv run cite-or-silence index      # mete los fragmentos y sus vectores en DuckDB
 uv run pytest
 uv run cite-or-silence serve      # http://127.0.0.1:8765: pregunta y mira cómo se comprueba cada frase
 ```
+
+Las respuestas las da Codex con una cuenta de ChatGPT (`codex login`). Sin ella, `--provider ollama` usa
+qwen3:14b en local, con Ollama y el modelo descargado.
 
 La página enseña los pasajes que encontró la búsqueda, el borrador del modelo con una cita junto a
 cada frase y la verificación, que mantiene o tacha cada una. Solo escucha en tu máquina: muestra texto
