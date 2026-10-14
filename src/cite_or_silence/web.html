@@ -972,7 +972,7 @@ function ask(text, fresh) {
   };
   if (source) source.close();
   input.value = asked;
-  input.blur();
+  document.activeElement?.blur();  // the box or a group button: either keeps the list under the question open
   history.replaceState(null, '', `?q=${encodeURIComponent(asked)}`);
   const first = !body.classList.contains('asked');
   body.classList.add('asked');
