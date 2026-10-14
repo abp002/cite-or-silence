@@ -12,6 +12,10 @@ and verification, almost nothing is (see [Results](#results), and [where it fail
 
 https://github.com/user-attachments/assets/48d8247a-eef2-4c21-bde4-c13391bfdbf9
 
+**[Try the demo](https://alejandroborrego.dev/cite-or-silence/)**: twelve example questions per
+language with their saved answers and every citation linked to the SEP (the passages themselves are
+not republished).
+
 ## What gets measured
 
 | Metric | Question it answers |

@@ -12,6 +12,9 @@ verificación, casi nada (ver [Resultados](#resultados) y [dónde falla](#dónde
 
 https://github.com/user-attachments/assets/639c1dfb-b87b-4df7-ab13-c672d96f1cf0
 
+**[Prueba la demo](https://alejandroborrego.dev/cite-or-silence/?lang=es)**: doce preguntas de ejemplo
+por idioma con sus respuestas guardadas y cada cita enlazada a la SEP (los pasajes no se publican).
+
 ## Qué se mide
 
 | Métrica | Qué pregunta responde |
