@@ -123,4 +123,5 @@ The README must say which model produced each number.
 - `uv run cite-or-silence ask "question" [--provider codex|ollama] [-k 10]`
 - `uv run cite-or-silence serve [--provider codex|ollama] [--port 8765]`
 - `uv run cite-or-silence export [site] [--provider codex|ollama]` (public demo, no SEP text)
+- `scripts/publish_site.sh` (pushes `site/` to `gh-pages`, served at https://alejandroborrego.dev/cite-or-silence/)
 - `uv run cite-or-silence bench [--ids s01,m02] [--limit N] [--provider codex|ollama]` (~1 h for all)
