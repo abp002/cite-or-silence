@@ -47,19 +47,59 @@ class Retrieval:
     vector: list[float]  # the question's embedding
     candidates: list[tuple[Passage, float, str]]  # the dense pool, nearest first: passage, similarity, fate
 
-# The questions the page offers, per language; the public demo can answer only these.
+# The questions the page offers, per language, grouped by what they test (the bench's types; the page
+# names each group in TEXT.groups); the public demo can answer only these. Taken from eval/questions.jsonl.
 EXAMPLES = {
-    "es": [
-        "¿Qué ilustra la alegoría de la caverna de Platón?",
-        "¿Qué es la suerte moral según Williams y Nagel?",
-        "¿Qué opinaba Platón de los smartphones?",
-    ],
-    "en": [
-        "What does Plato's allegory of the cave illustrate?",
-        "What is moral luck according to Williams and Nagel?",
-        "What did Plato think of smartphones?",
-    ],
+    "es": {
+        "single": [
+            "¿Qué intenta mostrar Searle con el argumento de la habitación china?",
+            "¿Qué son los casos Gettier y qué ponen en duda?",
+            "¿Qué es el velo de ignorancia de Rawls?",
+            "¿Qué ilustra la alegoría de la caverna de Platón?",
+            "¿Qué significa «wu wei» en el Daodejing?",
+        ],
+        "multi": [
+            "¿Qué dirían Kant y un consecuencialista sobre mentir para salvar a alguien?",
+            "¿En qué discrepan Popper y Kuhn sobre cómo avanza la ciencia?",
+            "¿Qué relación hay entre la habitación china y el test de Turing?",
+        ],
+        "false_premise": [
+            "¿Por qué Kant defendía el utilitarismo?",
+            "¿Por qué Hume era racionalista?",
+        ],
+        "none": [
+            "¿Qué opinaba Platón de los smartphones?",
+            "¿Qué es el «principio de resonancia ontológica» de Heidegger?",
+        ],
+    },
+    "en": {
+        "single": [
+            "What does Searle try to show with the Chinese room argument?",
+            "What are Gettier cases and what do they call into question?",
+            "What is Rawls's veil of ignorance?",
+            "What does Plato's allegory of the cave illustrate?",
+            "What does \"wu wei\" mean in the Daodejing?",
+        ],
+        "multi": [
+            "What would Kant and a consequentialist say about lying to save someone?",
+            "Where do Popper and Kuhn disagree about how science advances?",
+            "How is the Chinese room related to the Turing test?",
+        ],
+        "false_premise": [
+            "Why did Kant defend utilitarianism?",
+            "Why was Hume a rationalist?",
+        ],
+        "none": [
+            "What did Plato think of smartphones?",
+            "What is Heidegger's \"principle of ontological resonance\"?",
+        ],
+    },
 }
+
+
+def examples() -> list[str]:
+    """Every example question, all languages and groups, in page order."""
+    return [q for groups in EXAMPLES.values() for qs in groups.values() for q in qs]
 
 
 def pool(found: Retrieval, describe: Callable[[Passage], dict]) -> dict:
@@ -162,7 +202,7 @@ def public(events: list[Event]) -> list[Event]:
 def export(session: Session, out: Path, facts: dict[str, str]) -> int:
     """Write the public demo to out: page, logo and the example answers (asking the model for any
     not saved yet). Returns how many answers it holds."""
-    answers = {q: public(list(session.ask(q))) for questions in EXAMPLES.values() for q in questions}
+    answers = {q: public(list(session.ask(q))) for q in examples()}
     out.mkdir(parents=True, exist_ok=True)
     (out / "index.html").write_text(render(facts | {"MODE": "public"}), encoding="utf-8")
     (out / "answers.json").write_text(json.dumps(answers, ensure_ascii=False), encoding="utf-8")

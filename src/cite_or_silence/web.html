@@ -97,8 +97,9 @@ body.silent::before { opacity: 0; }
 
 .facts { margin: .7rem 0 0; font: .85rem/1.3 var(--sans); color: var(--sage); text-align: center; font-variant-numeric: tabular-nums; }
 .asked .facts { display: none; }
-.examples { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: .55rem; margin-top: 1.15rem; font: .95rem/1.3 var(--sans); color: var(--sage); }
-.examples .label { margin-right: .3rem; }
+.examples { display: flex; flex-direction: column; align-items: center; gap: .95rem; margin-top: 1.15rem; font: .95rem/1.3 var(--sans); color: var(--sage); }
+.group { display: flex; flex-wrap: wrap; justify-content: center; gap: .45rem .55rem; }
+.group-name { flex-basis: 100%; text-align: center; font: .74rem/1.3 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--faded); }
 .example {
   padding: .5rem .95rem; cursor: pointer;
   font: 1.02rem/1.3 var(--serif); color: var(--paper); text-align: left;
@@ -109,7 +110,7 @@ body.silent::before { opacity: 0; }
 .examples .keys { display: none; }
 .asked .examples {
   position: absolute; z-index: 5; top: 100%; left: 50%; width: min(34rem, 100%);
-  flex-direction: column; align-items: stretch; gap: .1rem;
+  align-items: stretch; gap: .1rem; max-height: min(70vh, 36rem); overflow-y: auto;
   margin-top: .6rem; padding: .7rem;
   background: var(--desk); border: 1px solid var(--rule); border-radius: 14px;
   box-shadow: 0 1.5rem 3.5rem rgba(0, 0, 0, .5);
@@ -117,6 +118,8 @@ body.silent::before { opacity: 0; }
 }
 .asked .asker:focus-within .examples { opacity: 1; visibility: visible; translate: -50% 0; transition: opacity .18s, translate .18s; }
 .asked .examples .label { margin: 0 0 .3rem .6rem; }
+.asked .group { flex-direction: column; gap: .1rem; }
+.asked .group-name { margin: .55rem .6rem .15rem; text-align: left; }
 .asked .example { padding: .55rem .6rem; border: 0; border-radius: 9px; }
 .asked .examples .keys { display: block; margin: .5rem .6rem .1rem; font-size: .82rem; }
 
@@ -497,6 +500,7 @@ const TEXT = {
     headline: 'Cada frase, con su cita.',
     lede: 'Preguntas de filosofía respondidas solo con la Stanford Encyclopedia of Philosophy. Lo que su cita no respalda se tacha; si no queda nada, calla.',
     question: 'Pregunta', placeholder: 'Escribe una pregunta de filosofía', ask: 'Preguntar', try: 'Prueba con',
+    groups: { single: 'Una entrada', multi: 'Comparar entradas', false_premise: 'Premisa falsa', none: 'Fuera de la SEP' },
     facts: (e, p) => `${fmt(e)} entradas · ${fmt(p)} pasajes · cada cita comprobada`,
     keys: 'Intro pregunta; Mayúsculas+Intro vuelve a preguntar al modelo en vez de repetir la respuesta guardada.',
     stepSearch: 'Buscar en la SEP', stepDraft: 'Redactar con citas', stepVerify: 'Comprobar cada cita',
@@ -542,6 +546,7 @@ const TEXT = {
     headline: 'Every sentence, cited.',
     lede: 'Philosophy questions answered only from the Stanford Encyclopedia of Philosophy. Whatever its citation does not back is struck out; if nothing is left, it stays silent.',
     question: 'Question', placeholder: 'Ask a philosophy question', ask: 'Ask', try: 'Try',
+    groups: { single: 'One entry', multi: 'Comparing entries', false_premise: 'False premise', none: 'Outside the SEP' },
     facts: (e, p) => `${fmt(e)} entries · ${fmt(p)} passages · every citation checked`,
     keys: 'Enter asks; Shift+Enter asks the model again instead of replaying the saved answer.',
     stepSearch: 'Search the SEP', stepDraft: 'Draft with citations', stepVerify: 'Check every citation',
@@ -620,14 +625,19 @@ function translate(next) {
   $('model').textContent = body.dataset.model ? `${T.model} ${body.dataset.model}` : '';
   $('watch-row').hidden = !PUBLIC;
   const examples = $('examples');
-  for (const old of examples.querySelectorAll('.example')) old.remove();
+  for (const old of examples.querySelectorAll('.group')) old.remove();
   const keys = examples.querySelector('.keys');
-  for (const text of EXAMPLES[lang] || []) {
-    const b = el('button', 'example', text);
-    b.type = 'button';
-    b.addEventListener('mousedown', (e) => e.preventDefault());  // keeps the question focused, so the list stays open
-    b.addEventListener('click', (e) => ask(text, e.shiftKey));
-    examples.insertBefore(b, keys);
+  for (const [kind, questions] of Object.entries(EXAMPLES[lang] || {})) {
+    const group = el('div', 'group');
+    group.append(el('span', 'group-name', T.groups[kind]));
+    for (const text of questions) {
+      const b = el('button', 'example', text);
+      b.type = 'button';
+      b.addEventListener('mousedown', (e) => e.preventDefault());  // keeps the question focused, so the list stays open
+      b.addEventListener('click', (e) => ask(text, e.shiftKey));
+      group.append(b);
+    }
+    examples.insertBefore(group, keys);
   }
 }
 

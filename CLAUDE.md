@@ -72,7 +72,8 @@ Test fixtures use invented text that only mimics SEP markup.
   one on replay by searching again, without the model.
 - The page speaks Spanish and English (ES|EN in the header; `?lang=`, then localStorage, then the
   browser): every string is in `TEXT` in web.html, and the example questions per language are
-  `web.EXAMPLES` (injected as `__EXAMPLES__`). The header links GitHub, LinkedIn and the portfolio; the
+  `web.EXAMPLES` (injected as `__EXAMPLES__`), grouped by bench type (single, multi, false_premise,
+  none) and named on the page by `TEXT.groups`; they come from `eval/questions.jsonl`. The header links GitHub, LinkedIn and the portfolio; the
   footer names the SEP as source and the model.
 - `export`: the public demo as static files in `site/` (gitignored, publishable). The same page with
   `data-mode="public"` replays `answers.json`: only the example questions in both languages (asked to
