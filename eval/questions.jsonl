@@ -99,3 +99,49 @@
 {"id": "f03", "type": "false_premise", "question": "¿Por qué Hume era racionalista?", "gold": [{"entry": "hume", "anchor": "PhilMind"}]}
 {"id": "f04", "type": "false_premise", "question": "¿Por qué Descartes negaba que existiera la mente?", "gold": [{"entry": "descartes-epistemology", "anchor": "CogiErgoSum"}]}
 {"id": "f05", "type": "false_premise", "question": "¿Por qué Popper defendía el verificacionismo del Círculo de Viena?", "gold": [{"entry": "popper", "anchor": "ProbDema"}]}
+{"id": "f06", "type": "false_premise", "question": "¿Por qué Locke defendía que nacemos con ideas innatas?", "gold": [{"entry": "locke", "anchor": "BookI"}]}
+{"id": "f07", "type": "false_premise", "question": "¿Con qué argumentos sostenía Berkeley que la materia existe con independencia de la mente?", "gold": [{"entry": "berkeley", "anchor": "BerCriMatPriDia"}]}
+{"id": "f08", "type": "false_premise", "question": "¿Por qué Platón negaba en el Fedón que existieran las Formas?", "gold": [{"entry": "plato-metaphysics", "anchor": "2"}]}
+{"id": "f09", "type": "false_premise", "question": "¿Por qué Aristóteles pensaba que la virtud ética es un extremo y no un término medio?", "gold": [{"entry": "aristotle-ethics", "anchor": "EthiVirtDisp"}]}
+{"id": "f10", "type": "false_premise", "question": "¿Por qué Hobbes creía que el estado de naturaleza es pacífico y armonioso?", "gold": [{"entry": "hobbes-moral", "anchor": "StaNatStaWar"}]}
+{"id": "f11", "type": "false_premise", "question": "¿Por qué Rousseau defendía que el ser humano es malo por naturaleza?", "gold": [{"entry": "rousseau", "anchor": "ConjHistMoraPsyc"}]}
+{"id": "f12", "type": "false_premise", "question": "¿Qué razones daba John Stuart Mill para rechazar el utilitarismo?", "gold": [{"entry": "mill-moral-political", "anchor": "MilUti"}]}
+{"id": "f13", "type": "false_premise", "question": "¿Por qué Spinoza defendía que la mente y el cuerpo son dos sustancias distintas?", "gold": [{"entry": "spinoza", "anchor": "HumaBein"}]}
+{"id": "f14", "type": "false_premise", "question": "¿Por qué Leibniz negaba el principio de razón suficiente?", "gold": [{"entry": "leibniz", "anchor": "PriSufRea"}]}
+{"id": "f15", "type": "false_premise", "question": "¿Cómo demostró Wittgenstein en las Investigaciones filosóficas que un lenguaje privado es posible?", "gold": [{"entry": "private-language", "anchor": "OveWitArgInt"}]}
+{"id": "f16", "type": "false_premise", "question": "¿Por qué Quine defendía la distinción entre enunciados analíticos y sintéticos?", "gold": [{"entry": "analytic-synthetic", "anchor": "VerConHol"}]}
+{"id": "f17", "type": "false_premise", "question": "¿Por qué Kuhn sostenía que la ciencia avanza de forma acumulativa y sin rupturas?", "gold": [{"entry": "thomas-kuhn", "anchor": "DevSci"}]}
+{"id": "f18", "type": "false_premise", "question": "¿Por qué Leibniz defendía que las mónadas actúan causalmente unas sobre otras?", "gold": [{"entry": "leibniz", "anchor": "PreEstHar"}]}
+{"id": "f19", "type": "false_premise", "question": "¿Por qué Rawls pensaba que en la posición original se elegiría el principio de utilidad?", "gold": [{"entry": "rawls", "anchor": "ArgOriPosSelPri"}]}
+{"id": "f20", "type": "false_premise", "question": "¿Por qué Nozick defendía un Estado amplio que redistribuya la riqueza?", "gold": [{"entry": "nozick-political", "anchor": "CriEndStaPatPri"}]}
+{"id": "f21", "type": "false_premise", "question": "¿Por qué Epicuro pensaba que debemos temer a la muerte?", "gold": [{"entry": "epicurus", "anchor": "PsycEthi"}]}
+{"id": "f22", "type": "false_premise", "question": "¿Por qué Sexto Empírico afirmaba que los pirrónicos habían alcanzado un conocimiento cierto?", "gold": [{"entry": "skepticism-ancient", "anchor": "SexEmp"}]}
+{"id": "f23", "type": "false_premise", "question": "¿Con qué ejemplos defendió Gettier que el conocimiento es creencia verdadera justificada?", "gold": [{"entry": "knowledge-analysis", "anchor": "CounTripAnal"}]}
+{"id": "f24", "type": "false_premise", "question": "¿Por qué Peter Singer sostiene que los intereses de los animales no cuentan moralmente?", "gold": [{"entry": "moral-animal", "anchor": "Spe"}]}
+{"id": "f25", "type": "false_premise", "question": "¿Por qué Frege pensaba que la aritmética no puede reducirse a la lógica?", "gold": [{"entry": "frege", "anchor": "CouExtProMatFou"}]}
+{"id": "f26", "type": "false_premise", "question": "¿Por qué Tomás de Aquino negaba que la existencia de Dios pudiera demostrarse?", "gold": [{"entry": "aquinas", "anchor": "God"}]}
+{"id": "f27", "type": "false_premise", "question": "¿Qué críticas hizo Anselmo al argumento ontológico en el Proslogion?", "gold": [{"entry": "ontological-arguments", "anchor": "ProsII"}]}
+{"id": "f28", "type": "false_premise", "question": "¿Por qué concluyó Searle, con el argumento de la habitación china, que los ordenadores entienden el lenguaje?", "gold": [{"entry": "chinese-room", "anchor": "ChinRoomArgu"}]}
+{"id": "f29", "type": "false_premise", "question": "¿Por qué sostenía Turing en 1950 que las máquinas nunca podrán pensar?", "gold": [{"entry": "turing-test", "anchor": "Tur195ImiGam"}]}
+{"id": "f30", "type": "false_premise", "question": "¿Por qué Marx defendía que las ideas determinan la estructura económica de la sociedad?", "gold": [{"entry": "marx", "anchor": "N185Pref"}]}
+{"id": "f31", "type": "false_premise", "question": "¿Por qué Hegel rechazaba el método dialéctico?", "gold": [{"entry": "hegel-dialectics", "anchor": "WhyDoesHegeUseDial"}]}
+{"id": "f32", "type": "false_premise", "question": "¿Por qué Schopenhauer era optimista sobre la existencia humana?", "gold": [{"entry": "schopenhauer", "anchor": "4"}]}
+{"id": "f33", "type": "false_premise", "question": "¿Cómo definía G. E. Moore «bueno» en términos de propiedades naturales?", "gold": [{"entry": "moore-moral", "anchor": "NonNatuOpenQuesArgu"}]}
+{"id": "f34", "type": "false_premise", "question": "¿Por qué Ockham defendía que los universales existen fuera de la mente?", "gold": [{"entry": "ockham", "anchor": "RejeUniv"}]}
+{"id": "f35", "type": "false_premise", "question": "¿Por qué Hume pensaba que el «debe» se deduce sin problema del «es»?", "gold": [{"entry": "hume-moral", "anchor": "io"}]}
+{"id": "f36", "type": "false_premise", "question": "¿Por qué Parfit sostenía que la identidad personal es lo que importa para sobrevivir?", "gold": [{"entry": "identity-personal", "anchor": "Fiss"}]}
+{"id": "n26", "type": "none", "subtype": "invented", "question": "¿Qué es la «paradoja del tejedor ciego» de Leibniz?", "gold": []}
+{"id": "n27", "type": "none", "subtype": "invented", "question": "¿Qué sostiene Hannah Arendt en su libro «La geometría del perdón»?", "gold": []}
+{"id": "n28", "type": "none", "subtype": "invented", "question": "¿En qué consiste el «argumento del espejo doble» de Wittgenstein?", "gold": []}
+{"id": "n29", "type": "none", "subtype": "invented", "question": "¿Qué propone la filósofa Irene Vasconcellos-Meyer con su «ética del umbral»?", "gold": []}
+{"id": "n30", "type": "none", "subtype": "invented", "question": "¿Qué es la «falacia de Okonkwo-Brandt» en lógica informal?", "gold": []}
+{"id": "n31", "type": "none", "subtype": "invented", "question": "¿Qué dice el «tercer postulado de la melancolía» de Spinoza?", "gold": []}
+{"id": "n32", "type": "none", "subtype": "invented", "question": "¿Qué defendía la «escuela de Valdivia» sobre el libre albedrío?", "gold": []}
+{"id": "n33", "type": "none", "subtype": "invented", "question": "¿Qué afirma el «principio de opacidad recíproca» de Quine?", "gold": []}
+{"id": "n34", "type": "none", "subtype": "out_of_scope", "question": "¿Qué le respondió Kant a Darwin sobre la evolución?", "gold": []}
+{"id": "n35", "type": "none", "subtype": "out_of_scope", "question": "¿Qué pensaba Aristóteles de las redes sociales?", "gold": []}
+{"id": "n36", "type": "none", "subtype": "out_of_scope", "question": "¿Cuál es la capital de Australia?", "gold": []}
+{"id": "n37", "type": "none", "subtype": "out_of_scope", "question": "¿Cómo se cambia la rueda de una bicicleta?", "gold": []}
+{"id": "n38", "type": "none", "subtype": "out_of_scope", "question": "¿Qué equipo ganó la Liga española de fútbol en 2019?", "gold": []}
+{"id": "n39", "type": "none", "subtype": "out_of_scope", "question": "¿De qué color eran los ojos de Spinoza?", "gold": []}
+{"id": "n40", "type": "none", "subtype": "out_of_scope", "question": "¿Qué desayunaba Schopenhauer cada mañana?", "gold": []}
