@@ -1,19 +1,20 @@
-"""What the search looks for: not the question itself, but a sketch of its answer.
+"""Rewriting the question before searching: two experiments, neither adopted (issue #3).
 
-The embedding of a question finds the right entry but often a neighbouring section: a question
-looks like other questions and like introductions, not like the paragraph that answers it. So
-the model first writes, from memory and in English, the two or three sentences an encyclopedia
-would use to answer (HyDE, "hypothetical document embeddings"), and the search uses the vector
-of that sketch. Measured on the question set (scripts/recall_hyde.py), the gold section is among
-the ten passages 69 % of the time instead of 58 %; translating the question into English, the
-first idea, gave 3 points at most (scripts/recall_translated.py).
+The embedding of a Spanish question finds the right SEP entry but often a neighbouring section.
+Two rewritings were tried, each written by the answering model and cached per model:
 
-The sketch is only a search query. It never reaches the answer: the model still answers the
-original question from the retrieved passages alone, and every sentence is still verified, so
-a wrong sketch can at worst retrieve the wrong passages.
+- a literal English translation (`translation_prompt`). The language turned out not to be the
+  limit: the gold section is among the top five 55 % of the time instead of 51 %
+  (scripts/recall_translated.py);
+- a sketch of the answer (`sketch_prompt`): the two or three sentences an encyclopedia would
+  use, written from memory, whose vector is searched instead of the question's (HyDE). It
+  does find the gold section more often (69 % instead of 58 % among the ten passages the system
+  uses; scripts/recall_hyde.py), but the answers got no better in the bench: the gold section
+  was cited no more often, false premises were corrected less often, and it costs a call per
+  question. So search still embeds the question; `bench --search sketch` reruns the experiment.
 
-Rewrites are cached per model in a JSON file keyed by the question, so a rerun searches with
-the same words.
+A rewriting is only ever a search query: the model answers the original question from the
+retrieved passages alone.
 """
 
 import json

@@ -61,17 +61,18 @@ def cmd_search(args) -> None:
         print(f"{chunk_id}  [{heading}]\n    {text[:200]}...\n")
 
 
-def sketcher(llm, sketch: bool = True):
-    """question -> the text the search embeds: the model's sketch of an answer (see query.py), or
-    the question itself when sketch is off (how v1 searched; kept to measure the difference)."""
+def sketcher(llm, sketch: bool = False):
+    """question -> the text the search embeds: the question itself, or the model's sketch of an
+    answer (see query.py: it finds the gold section more often but answers got no better, so it
+    is off unless asked for)."""
     if not sketch:
         return lambda question: question
     cache = DATA / "queries" / f"{llm.name.replace(':', '_')}-sketch.json"
     return lambda question: query.rewrite([question], llm, cache)[0]
 
 
-def retriever(con, llm, k: int = 10, sketch: bool = True):
-    """Production retrieval: diverse search with the sketch's vector, k passages per question."""
+def retriever(con, llm, k: int = 10, sketch: bool = False):
+    """Production retrieval: diverse search, k passages per question."""
     model = embed.load_model()
     wanted = sketcher(llm, sketch)
 
@@ -82,13 +83,12 @@ def retriever(con, llm, k: int = 10, sketch: bool = True):
     return retrieve
 
 
-def tracer(con, llm, k: int = 10):
+def tracer(con, k: int = 10):
     """The page's retrieval: the same diverse search as `retriever`, also keeping how it chose."""
     model = embed.load_model()
-    wanted = sketcher(llm)
 
     def retrieve(question: str) -> web.Retrieval:
-        vector = embed.encode(model, [wanted(question)])[0]
+        vector = embed.encode(model, [question])[0]
         scored = search.dense_scored(con, vector)
         fates = search.cap_fates([i for i, _ in scored], k)
         candidates = answer.passages_of(con, [i for i, _ in scored])
@@ -114,14 +114,14 @@ def cmd_ask(args) -> None:
             print(f"- {s.text} [{s.source}] -- {s.dropped}\n    quote: {s.quote}")
 
 
-def bench_dir(llm, search_with: str = "sketch", version: str = bench.VERSION) -> Path:
+def bench_dir(llm, search_with: str = "question", version: str = bench.VERSION) -> Path:
     """Where a bench run lives: one folder per model and version of the system, so the numbers of
-    an older version stay comparable. v1 has no suffix; the ablation that searches with the bare
-    question gets its own folder."""
+    an older version stay comparable. v1 has no suffix; a run that searches with the sketch gets
+    its own folder."""
     name = llm.name.replace(":", "_")
     if version != "v1":
-        name += f"-{version}" + ("" if search_with == "sketch" else f"-{search_with}")
-    return DATA / "bench" / name
+        name += f"-{version}"
+    return DATA / "bench" / (name if search_with == "question" else f"{name}-{search_with}")
 
 
 def cmd_bench(args) -> None:
@@ -162,8 +162,8 @@ def cmd_judge(args) -> None:
 def page_session(args):
     """The page's session (answers saved per model, shared by serve and export) and the index size."""
     con = search.connect(DB, read_only=True)
+    retrieve = tracer(con, args.k)
     llm = provider.get(args.provider)
-    retrieve = tracer(con, llm, args.k)
     saved = DATA / "serve" / f"{llm.name.replace(':', '_')}.json"
     passages, entries = con.execute("SELECT count(*), count(DISTINCT entry) FROM chunks").fetchone()
     return web.Session(retrieve, llm, web.describer(con, RAW), saved), entries, passages
@@ -253,14 +253,14 @@ def main() -> None:
     bn.add_argument("--ids", help="comma-separated question ids to run")
     bn.add_argument("--limit", type=int, help="run at most N new questions")
     bn.add_argument("--types", help="comma-separated question types to run (single,multi,none,false_premise)")
-    bn.add_argument("--search", choices=("sketch", "question"), default="sketch", help="what the search embeds; 'question' is how v1 searched")
+    bn.add_argument("--search", choices=("question", "sketch"), default="question", help="what the search embeds; 'sketch' is the experiment of issue #3")
     bn.set_defaults(func=cmd_bench)
     jd = sub.add_parser("judge", help="grade the saved bench answers again with a judge from another model family")
     jd.add_argument("--provider", choices=("codex", "ollama"), default="codex", help="whose answers to grade")
     jd.add_argument("--judge", choices=tuple(provider.PROVIDERS), default="claude")
     jd.add_argument("--limit", type=int, help="grade at most N new questions")
     jd.add_argument("--version", default=bench.VERSION, help="which bench run to grade (v1 is the first system)")
-    jd.add_argument("--search", choices=("sketch", "question"), default="sketch")
+    jd.add_argument("--search", choices=("question", "sketch"), default="question")
     jd.set_defaults(func=cmd_judge)
     sv = sub.add_parser("serve", help="local page to ask questions and watch each sentence get verified")
     sv.add_argument("--provider", choices=("codex", "ollama"), default="codex")

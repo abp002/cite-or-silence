@@ -31,7 +31,7 @@ from cite_or_silence import evaluate
 from cite_or_silence.answer import Passage, answer, passages_of
 from cite_or_silence.provider import Provider
 
-VERSION = "v2"  # v1: search by the question, no premise corrections; v2: search by a sketch, corrections
+VERSION = "v2"  # v1: no premise corrections; v2: a sentence may correct a false premise of the question
 ARMS = ("bare", "rag", "verified")
 LABELS = ("supported", "contradicted", "unbacked")
 
