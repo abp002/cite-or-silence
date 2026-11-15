@@ -23,8 +23,9 @@ ANSWER_SCHEMA = {
                     "text": {"type": "string"},
                     "source": {"type": "integer"},
                     "quote": {"type": "string"},
+                    "premise": {"type": "string"},
                 },
-                "required": ["text", "source", "quote"],
+                "required": ["text", "source", "quote", "premise"],
                 "additionalProperties": False,
             },
         }
@@ -85,9 +86,14 @@ def answer_prompt(question: str, passages: list[Passage]) -> str:
         "- source: the number of the passage it comes from;\n"
         "- quote: a span copied character for character from that passage, in its original English, "
         "long enough to back the whole sentence (at least a full clause; no ellipses, no paraphrase).\n"
+        "- premise: an empty string, except for the correction described below.\n"
         "Every sentence must be backed by its own quote. Do not add anything the passages do not say, "
-        "not even well-known facts. If the question rests on a false premise, correct it with cited "
-        "sentences. If the passages do not answer the question, return an empty list.\n\n"
+        "not even well-known facts. If the question takes for granted something the passages show to "
+        "be false, start with one sentence that corrects it: its text denies the assumption and says "
+        "what the passage states instead, its premise is the false assumption written as a plain "
+        "claim in English, and its quote is a span that cannot be true together with that assumption. "
+        "Then answer what can still be answered, with ordinary cited sentences. Never use a premise "
+        "for anything else. If the passages do not answer the question, return an empty list.\n\n"
         f"PASSAGES\n\n{sources}\n\nQUESTION: {question}"
     )
 
@@ -95,10 +101,10 @@ def answer_prompt(question: str, passages: list[Passage]) -> str:
 def draft(question: str, passages: list[Passage], model: Provider) -> list[Sentence]:
     """The model's answer before verification: every sentence with its passage and quote."""
     raw = model.complete(answer_prompt(question, passages), ANSWER_SCHEMA)["sentences"]
-    return [Sentence(s["text"], s["source"], s["quote"]) for s in raw]
+    return [Sentence(s["text"], s["source"], s["quote"], premise=s.get("premise", "")) for s in raw]
 
 
 def answer(question: str, passages: list[Passage], model: Provider, judge: Provider) -> Answer:
     sentences = draft(question, passages, model)
-    verify(sentences, [p.text for p in passages], judge)
+    verify(sentences, [p.text for p in passages], judge, question)
     return Answer(question, passages, sentences)

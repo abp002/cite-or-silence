@@ -75,5 +75,39 @@ class Ollama:
         return json.loads(r.json()["message"]["content"])
 
 
+class Claude:
+    """Claude through the Claude Code CLI and the user's login, no API key.
+
+    Used as the independent bench judge: a model family that neither answering model belongs to.
+    No tools, no user or project settings, no MCP servers and an empty working directory, so the
+    model sees nothing but the prompt, which goes in through stdin.
+    """
+
+    SYSTEM = "You are a careful grader. Answer only through the structured output."
+
+    def __init__(self, model: str = "claude-sonnet-5-5", timeout: int = 600):
+        self.model, self.timeout = model, timeout
+        self.name = f"claude:{model}"
+
+    def complete(self, prompt: str, schema: dict) -> dict:
+        with tempfile.TemporaryDirectory() as tmp:
+            run = subprocess.run(
+                ["claude", "-p", "--model", self.model, "--output-format", "json",
+                 "--json-schema", json.dumps(schema), "--tools", "", "--setting-sources", "",
+                 "--strict-mcp-config", "--disable-slash-commands", "--no-session-persistence",
+                 "--system-prompt", self.SYSTEM],
+                input=prompt, capture_output=True, text=True, timeout=self.timeout, cwd=tmp,
+            )  # fmt: skip
+        if run.returncode != 0:
+            raise RuntimeError(f"claude exited {run.returncode}: {(run.stderr or run.stdout)[-500:]}")
+        reply = json.loads(run.stdout)
+        if reply.get("is_error") or "structured_output" not in reply:
+            raise RuntimeError(f"claude gave no structured output: {str(reply.get('result'))[:300]}")
+        return reply["structured_output"]
+
+
+PROVIDERS = {"codex": Codex, "ollama": Ollama, "claude": Claude}
+
+
 def get(name: str) -> Provider:
-    return {"codex": Codex, "ollama": Ollama}[name]()
+    return PROVIDERS[name]()

@@ -1,4 +1,4 @@
-from cite_or_silence.bench import ARMS, apply_grades, judge_request, letters
+from cite_or_silence.bench import ARMS, apply_grades, disagreements, judge_request, letters
 
 
 def q(qtype, qid="x1"):
@@ -44,3 +44,29 @@ def test_judge_only_sees_letters_never_arm_names():
     assert not any(arm in prompt for arm in ARMS)
     ids = schema["properties"]["grades"]["items"]["properties"]["sentence"]["enum"]
     assert sorted(ids) == ["A1", "B1", "C1"]
+
+
+def _result(qtype, texts, grades, scores=None):
+    question = q(qtype)
+    return {"id": "x1", "type": qtype, "texts": texts, "grades": grades, "scores": scores or apply_grades(question, texts, grades)}
+
+
+def test_disagreements_count_each_sentence_once_under_both_judges_labels():
+    texts = {"bare": ["uno", "dos"], "rag": ["tres"], "verified": []}
+    L = letters("x1")
+    lenient = [{"sentence": f"{L['bare']}1", "label": "supported"}, {"sentence": f"{L['bare']}2", "label": "supported"},
+               {"sentence": f"{L['rag']}1", "label": "supported"}]  # fmt: skip
+    strict = [{"sentence": f"{L['bare']}1", "label": "supported"}, {"sentence": f"{L['bare']}2", "label": "unbacked"}]
+    out = disagreements([_result("single", texts, lenient)], [_result("single", texts, strict)])
+    assert "sentences graded by both: 3, same label: 1 (33%)" in out
+    row = next(line for line in out.splitlines() if line.startswith("supported"))
+    assert row.split() == ["supported", "1", "0", "2"]  # the sentence the second judge skipped counts as unbacked
+
+
+def test_disagreements_count_flipped_verdicts_on_false_premises():
+    texts = {"bare": ["Kant no era utilitarista."], "rag": ["Kant era deontólogo."], "verified": []}
+    L = letters("x1")
+    first = [{"answer": L["bare"], "corrects": True}, {"answer": L["rag"], "corrects": True}]
+    second = [{"answer": L["bare"], "corrects": True}, {"answer": L["rag"], "corrects": False}]
+    out = disagreements([_result("false_premise", texts, first)], [_result("false_premise", texts, second)])
+    assert "false_premise: 1 of 3 verdicts differ" in out

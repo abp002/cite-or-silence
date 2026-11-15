@@ -121,7 +121,7 @@ def steps(question: str, retrieve: Callable[[str], Retrieval], model: Provider, 
     yield "passages", {"passages": [describe(p) for p in passages]}
     sentences = draft(question, passages, model)
     yield "draft", {"sentences": [{"text": s.text, "source": s.source, "quote": s.quote} for s in sentences]}
-    verify(sentences, [p.text for p in passages], model)
+    verify(sentences, [p.text for p in passages], model, question)
     yield "verdicts", {"dropped": [s.dropped for s in sentences]}
     yield "done", {"silent": all(s.dropped for s in sentences)}
 

@@ -74,3 +74,30 @@ def test_quote_matches_passage_text_with_mathjax_and_footnote_gaps():
     passage = r"The analysis says that ‘the \(F\) is \(G\)’ holds, as the keeper said of svabhāva . Then more."
     assert quote_in("The analysis says that ‘the F is G’ holds", passage)
     assert quote_in("as the keeper said of svabhāva. Then more", passage)
+
+
+def test_a_correction_is_judged_against_the_premise_it_denies():
+    sentences = [
+        Sentence("El farero no odiaba las tormentas: decía que enseñan paciencia.", 1,
+                 "argued that “every storm teaches patience” to those who wait", premise="The keeper hated storms."),
+        Sentence("Los jardineros no temían la escarcha.", 2, "believed that frost was a messenger", premise="Gardeners feared frost."),
+    ]  # fmt: skip
+    judge = Judge(yes={1})
+    verify(sentences, PASSAGES, judge, "¿Por qué el farero odiaba las tormentas?")
+    assert [s.dropped for s in sentences] == [None, "quote does not contradict the premise"]
+    prompt = judge.prompts[0]
+    assert "PREMISE: The keeper hated storms." in prompt and "QUESTION: ¿Por qué el farero odiaba las tormentas?" in prompt
+
+
+def test_a_correction_still_needs_its_quote_in_the_passage():
+    s = Sentence("El farero no odiaba las tormentas.", 1, "the keeper loved every storm he saw", premise="The keeper hated storms.")
+    judge = Judge(yes={1})
+    verify([s], PASSAGES, judge, "¿?")
+    assert s.dropped == "quote not found in the cited passage" and judge.prompts == []
+
+
+def test_ordinary_claims_get_the_same_judge_prompt_as_before_corrections_existed():
+    from cite_or_silence.verify import judge_prompt
+
+    prompt = judge_prompt([(1, Sentence("El farero pedía paciencia.", 1, "every storm teaches patience to those"))], "¿Qué pedía?")
+    assert "PREMISE" not in prompt and "QUESTION" not in prompt

@@ -12,7 +12,9 @@ A judge sees the arms under shuffled letters, so it cannot favour one, and grade
 - false_premise: did the arm reject the false premise;
 - single / multi: each sentence against one reference shared by all arms (the gold sections plus
   the retrieved passages): supported, contradicted, or unbacked (the reference says nothing).
-The judge is the same model that answers; the README says so.
+That first judge is the same model that answers, and it is lenient. `regrade` has a judge from
+another model family grade the saved answers again, blind and against the same reference, without
+asking the answering model anything; `disagreements` shows where the two judges part.
 
 Results go to data/bench/<provider>/<qid>.json (gitignored: they hold SEP quotes) and the run
 resumes from the questions already there.
@@ -26,9 +28,10 @@ from pathlib import Path
 import duckdb
 
 from cite_or_silence import evaluate
-from cite_or_silence.answer import Passage, answer
+from cite_or_silence.answer import Passage, answer, passages_of
 from cite_or_silence.provider import Provider
 
+VERSION = "v2"  # v1: search by the question, no premise corrections; v2: search by a sketch, corrections
 ARMS = ("bare", "rag", "verified")
 LABELS = ("supported", "contradicted", "unbacked")
 
@@ -111,6 +114,13 @@ def judge_request(q: dict, texts: dict[str, list[str]], reference: list[Passage]
             _schema({"grades": {"type": "array", "items": _schema(item)}}))  # fmt: skip
 
 
+def grade(q: dict, texts: dict[str, list[str]], reference: list[Passage], judge: Provider) -> list[dict]:
+    if q["type"] == "none" and not any(texts.values()):
+        return []  # nothing to judge: every arm abstained
+    prompt, schema = judge_request(q, texts, reference)
+    return judge.complete(prompt, schema)["grades"]
+
+
 def apply_grades(q: dict, texts: dict[str, list[str]], grades: list[dict]) -> dict[str, dict]:
     """Judge output -> per-arm scores. Ids the judge skips count against the arm."""
     to_arm = {letter: arm for arm, letter in letters(q["id"]).items()}
@@ -143,11 +153,7 @@ def run_one(con, q: dict, retrieve: Callable[[str], list[Passage]], model: Provi
     result = answer(q["question"], passages, model, model)
     texts = {"bare": bare, "rag": [s.text for s in result.sentences], "verified": [s.text for s in result.kept]}
     reference = gold_text(con, q["gold"]) + passages if q["gold"] else []
-    if q["type"] == "none" and not any(texts.values()):
-        grades = []  # nothing to judge: every arm abstained
-    else:
-        prompt, schema = judge_request(q, texts, reference)
-        grades = model.complete(prompt, schema)["grades"]
+    grades = grade(q, texts, reference, model)
     scores = apply_grades(q, texts, grades)
     cited = [result.passages[s.source - 1] for s in result.kept]
     if q["gold"]:
@@ -205,3 +211,61 @@ def run(con, questions: list[dict], retrieve, model: Provider, out_dir: Path, li
         (out_dir / f"{q['id']}.json").write_text(json.dumps(result, ensure_ascii=False, indent=1))
         log(f"[{n}/{len(todo)}] {q['id']} done")
     return [json.loads(p.read_text()) for p in sorted(out_dir.glob("*.json"))]
+
+
+def regrade(con, questions: list[dict], results: list[dict], judge: Provider, out_dir: Path, limit: int | None = None, log=print) -> list[dict]:
+    """The saved answers graded again by another judge: same texts, same reference, same shuffled
+    letters. Only the scores and grades change; resumable like `run`."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    by_id = {q["id"]: q for q in questions}
+    todo = [r for r in results if r["id"] in by_id and not (out_dir / f"{r['id']}.json").exists()][:limit]
+    for n, r in enumerate(todo, 1):
+        q = by_id[r["id"]]
+        try:
+            reference = gold_text(con, q["gold"]) + passages_of(con, r["passages"]) if q["gold"] else []
+            grades = grade(q, r["texts"], reference, judge)
+        except Exception as e:
+            log(f"[{n}/{len(todo)}] {r['id']} FAILED: {e}")
+            continue
+        scores = apply_grades(q, r["texts"], grades)
+        if "gold_cited" in r["scores"]["verified"]:
+            scores["verified"]["gold_cited"] = r["scores"]["verified"]["gold_cited"]
+        again = {**r, "scores": scores, "grades": grades, "judge": judge.name}
+        (out_dir / f"{r['id']}.json").write_text(json.dumps(again, ensure_ascii=False, indent=1))
+        log(f"[{n}/{len(todo)}] {r['id']} done")
+    return [json.loads(p.read_text()) for p in sorted(out_dir.glob("*.json"))]
+
+
+def sentence_labels(q: dict, texts: dict[str, list[str]], grades: list[dict]) -> dict[tuple[str, int], str]:
+    """(arm, sentence number) -> label, with the same default as apply_grades for skipped ids."""
+    to_arm = {letter: arm for arm, letter in letters(q["id"]).items()}
+    given = {(to_arm[g["sentence"][0]], int(g["sentence"][1:])): g["label"]
+             for g in grades if g["sentence"][:1] in to_arm and g["sentence"][1:].isdigit()}  # fmt: skip
+    return {(arm, n): given.get((arm, n), "unbacked") for arm in ARMS for n in range(1, len(texts[arm]) + 1)}
+
+
+def disagreements(first: list[dict], second: list[dict]) -> str:
+    """Where two judges part on the same answers: sentence labels on answerable questions
+    (rows: first judge, columns: second) and flipped verdicts on the other two types."""
+    other = {r["id"]: r for r in second}
+    pairs = [(a, other[a["id"]]) for a in first if a["id"] in other]
+    table = {(x, y): 0 for x in LABELS for y in LABELS}
+    flips = {"none": [0, 0], "false_premise": [0, 0]}  # [verdicts that differ, verdicts]
+    for a, b in pairs:
+        if a["type"] in flips:
+            key = "abstains" if a["type"] == "none" else "corrects"
+            for arm in ARMS:
+                flips[a["type"]][0] += a["scores"][arm][key] != b["scores"][arm][key]
+                flips[a["type"]][1] += 1
+            continue
+        la, lb = sentence_labels(a, a["texts"], a["grades"]), sentence_labels(a, a["texts"], b["grades"])
+        for sid in la:
+            table[la[sid], lb[sid]] += 1
+    total = sum(table.values())
+    same = sum(table[x, x] for x in LABELS)
+    lines = [f"sentences graded by both: {total}, same label: {same} ({same / total:.0%})" if total else "no sentences graded by both",
+             f"{'first \\ second':<16}" + "".join(f"{y:>14}" for y in LABELS)]  # fmt: skip
+    lines += [f"{x:<16}" + "".join(f"{table[x, y]:>14}" for y in LABELS) for x in LABELS]
+    for t, (differ, n) in flips.items():
+        lines.append(f"{t}: {differ} of {n} verdicts differ")
+    return "\n".join(lines)

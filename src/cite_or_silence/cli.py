@@ -4,7 +4,7 @@ import statistics
 from pathlib import Path
 
 from cite_or_silence.chunk import chunk_entry
-from cite_or_silence import answer, bench, embed, evaluate, provider, search, web
+from cite_or_silence import answer, bench, embed, evaluate, provider, query, search, web
 from cite_or_silence.fetch import fetch_all
 from cite_or_silence import questions
 
@@ -61,23 +61,34 @@ def cmd_search(args) -> None:
         print(f"{chunk_id}  [{heading}]\n    {text[:200]}...\n")
 
 
-def retriever(con, k: int = 10):
-    """Production retrieval: diverse search, k passages per question."""
+def sketcher(llm, sketch: bool = True):
+    """question -> the text the search embeds: the model's sketch of an answer (see query.py), or
+    the question itself when sketch is off (how v1 searched; kept to measure the difference)."""
+    if not sketch:
+        return lambda question: question
+    cache = DATA / "queries" / f"{llm.name.replace(':', '_')}-sketch.json"
+    return lambda question: query.rewrite([question], llm, cache)[0]
+
+
+def retriever(con, llm, k: int = 10, sketch: bool = True):
+    """Production retrieval: diverse search with the sketch's vector, k passages per question."""
     model = embed.load_model()
+    wanted = sketcher(llm, sketch)
 
     def retrieve(question: str) -> list[answer.Passage]:
-        vector = embed.encode(model, [question])[0]
+        vector = embed.encode(model, [wanted(question)])[0]
         return answer.passages_of(con, search.search(con, question, vector, "diverse", k))
 
     return retrieve
 
 
-def tracer(con, k: int = 10):
+def tracer(con, llm, k: int = 10):
     """The page's retrieval: the same diverse search as `retriever`, also keeping how it chose."""
     model = embed.load_model()
+    wanted = sketcher(llm)
 
     def retrieve(question: str) -> web.Retrieval:
-        vector = embed.encode(model, [question])[0]
+        vector = embed.encode(model, [wanted(question)])[0]
         scored = search.dense_scored(con, vector)
         fates = search.cap_fates([i for i, _ in scored], k)
         candidates = answer.passages_of(con, [i for i, _ in scored])
@@ -92,8 +103,8 @@ def tracer(con, k: int = 10):
 
 def cmd_ask(args) -> None:
     con = search.connect(DB, read_only=True)
-    passages = retriever(con, args.k)(args.question)
     llm = provider.get(args.provider)
+    passages = retriever(con, llm, args.k)(args.question)
     result = answer.answer(args.question, passages, llm, llm)
     print(f"({llm.name})\n\n{result.render()}")
     dropped = [s for s in result.sentences if s.dropped]
@@ -103,24 +114,56 @@ def cmd_ask(args) -> None:
             print(f"- {s.text} [{s.source}] -- {s.dropped}\n    quote: {s.quote}")
 
 
+def bench_dir(llm, search_with: str = "sketch", version: str = bench.VERSION) -> Path:
+    """Where a bench run lives: one folder per model and version of the system, so the numbers of
+    an older version stay comparable. v1 has no suffix; the ablation that searches with the bare
+    question gets its own folder."""
+    name = llm.name.replace(":", "_")
+    if version != "v1":
+        name += f"-{version}" + ("" if search_with == "sketch" else f"-{search_with}")
+    return DATA / "bench" / name
+
+
 def cmd_bench(args) -> None:
     con = search.connect(DB, read_only=True)
-    retrieve = retriever(con)
     llm = provider.get(args.provider)
+    retrieve = retriever(con, llm, sketch=args.search == "sketch")
     asked = questions.load(QUESTIONS)
     if args.ids:
         asked = [q for q in asked if q["id"] in args.ids.split(",")]
-    out = DATA / "bench" / llm.name.replace(":", "_")
+    if args.types:
+        asked = [q for q in asked if q["type"] in args.types.split(",")]
+    out = bench_dir(llm, args.search)
     results = bench.run(con, asked, retrieve, llm, out, args.limit, log=lambda m: print(m, flush=True))
     print(f"\n{len(results)} questions in {out} ({llm.name})\n")
     print(bench.report(results))
 
 
+def cmd_judge(args) -> None:
+    """Grade the saved bench answers of one provider again with an independent judge."""
+    con = search.connect(DB, read_only=True)
+    answered = provider.get(args.provider)
+    judge = provider.get(args.judge)
+    src = bench_dir(answered, args.search, args.version)
+    asked = questions.load(QUESTIONS)
+    ids = {q["id"] for q in asked}
+    first = [r for r in (json.loads(p.read_text()) for p in sorted(src.glob("*.json"))) if r["id"] in ids]
+    out = src / ("judge-" + judge.name.replace(":", "_"))
+    second = bench.regrade(con, asked, first, judge, out, args.limit, log=lambda m: print(m, flush=True))
+    done = {r["id"] for r in second}
+    first = [r for r in first if r["id"] in done]
+    print(f"\n{len(second)} questions answered by {answered.name}\n\njudge: {answered.name} (the model that answers)\n")
+    print(bench.report(first))
+    print(f"\njudge: {judge.name}\n")
+    print(bench.report(second))
+    print("\n" + bench.disagreements(first, second))
+
+
 def page_session(args):
     """The page's session (answers saved per model, shared by serve and export) and the index size."""
     con = search.connect(DB, read_only=True)
-    retrieve = tracer(con, args.k)
     llm = provider.get(args.provider)
+    retrieve = tracer(con, llm, args.k)
     saved = DATA / "serve" / f"{llm.name.replace(':', '_')}.json"
     passages, entries = con.execute("SELECT count(*), count(DISTINCT entry) FROM chunks").fetchone()
     return web.Session(retrieve, llm, web.describer(con, RAW), saved), entries, passages
@@ -209,7 +252,16 @@ def main() -> None:
     bn.add_argument("--provider", choices=("codex", "ollama"), default="codex")
     bn.add_argument("--ids", help="comma-separated question ids to run")
     bn.add_argument("--limit", type=int, help="run at most N new questions")
+    bn.add_argument("--types", help="comma-separated question types to run (single,multi,none,false_premise)")
+    bn.add_argument("--search", choices=("sketch", "question"), default="sketch", help="what the search embeds; 'question' is how v1 searched")
     bn.set_defaults(func=cmd_bench)
+    jd = sub.add_parser("judge", help="grade the saved bench answers again with a judge from another model family")
+    jd.add_argument("--provider", choices=("codex", "ollama"), default="codex", help="whose answers to grade")
+    jd.add_argument("--judge", choices=tuple(provider.PROVIDERS), default="claude")
+    jd.add_argument("--limit", type=int, help="grade at most N new questions")
+    jd.add_argument("--version", default=bench.VERSION, help="which bench run to grade (v1 is the first system)")
+    jd.add_argument("--search", choices=("sketch", "question"), default="sketch")
+    jd.set_defaults(func=cmd_judge)
     sv = sub.add_parser("serve", help="local page to ask questions and watch each sentence get verified")
     sv.add_argument("--provider", choices=("codex", "ollama"), default="codex")
     sv.add_argument("--port", type=int, default=8765)
