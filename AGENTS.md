@@ -45,16 +45,33 @@ Test fixtures use invented text that only mimics SEP markup.
   and a quote copied from it in English -> `verify` drops a sentence whose quote is not in the cited
   passage (exact after normalising quotes, dashes, whitespace, case; at least 5 words) and then asks a
   judge, in one call per answer, whether each quote supports its sentence. Nothing left -> silence.
+- A sentence may correct a false premise of the question (`Sentence.premise` holds the assumption
+  it denies, in English). Its quote is checked like any other (it must be in the passage) and the
+  judge is asked something else: whether the quote cannot be true together with the premise. The
+  judge prompt for ordinary claims is byte-identical to v1 when an answer has no correction.
+- Search embeds the question itself. Two rewritings of the question were measured and not adopted
+  (`query.py`, issue #3): an English translation (Recall@5 0.51 -> 0.55) and a sketch of the answer
+  written by the model (HyDE; gold section in the top ten 0.58 -> 0.69, but no better answers in the
+  bench). `scripts/recall_translated.py` and `scripts/recall_hyde.py` rerun them; rewritings are
+  cached in `data/queries/`.
 - Providers (`provider.py`): `codex` runs `codex exec` with the ChatGPT login (OAuth, no API key) in an
   empty temp dir, read-only, `--ignore-user-config`, stdin closed (open stdin makes it hang); ~15k
   tokens per call because of Codex's agent prompt. `ollama` (qwen3:14b) is the free local fallback.
   If codex fails with "refresh token was already used", run `codex login` again.
+  `claude` runs `claude -p` (Claude Code login) with no tools, settings or MCP servers and the prompt
+  on stdin; it is only used as the independent bench judge.
 
 - `bench`: three arms of the same model per question: `bare` (no retrieval), `rag` (before
   verification), `verified`. Every arm may return an empty list. One judge call per question grades the
   arms under shuffled letters: none -> abstains; false_premise -> corrects; single/multi -> each
   sentence against the gold sections + the retrieved passages (supported / contradicted / unbacked).
-  Rules fixed before the first run. Results in `data/bench/<provider>/<qid>.json`, resumable.
+  Rules fixed before the first run. Results in `data/bench/<provider>[-<version>]/<qid>.json`,
+  resumable. One folder per system version (`bench.VERSION`; v1, before premise corrections, has no
+  suffix) so older numbers stay comparable. Two identical codex runs over the 36 false premises agreed
+  on 24: differences of three or four questions are noise.
+- `judge`: grades a saved bench run again with a model from another family (default `claude`), blind,
+  same reference and letters; saves to `<run>/judge-<judge>/` and prints both reports and where the
+  judges disagree. It never asks the answering model anything.
 - `serve`: local demo page on 127.0.0.1:8765 only (it shows SEP text). Stdlib `http.server`; each step
   (pool, passages, draft, verdicts, done) reaches the page as a server-sent event, which is why `answer.draft`
   and `verify` are called separately there. The page is `src/cite_or_silence/web.html` (no external
@@ -98,8 +115,6 @@ Test fixtures use invented text that only mimics SEP markup.
   top-left corner; its thread draws itself on load with CSS inside the SVG). Traced from images Alejandro generated; the
   wordmark's thread is a single stroke along the original's centerline, not a traced outline, so it
   can be drawn.
-- Known limit: a sentence about the question itself ("the premise is wrong") has no quote to back it,
-  so verification drops the explicit correction of a false premise.
 
 ## Plan (v1)
 1. Fetch and chunk, checking sections come out right.
@@ -124,4 +139,5 @@ The README must say which model produced each number.
 - `uv run cite-or-silence serve [--provider codex|ollama] [--port 8765]`
 - `uv run cite-or-silence export [site] [--provider codex|ollama]` (public demo, no SEP text)
 - `scripts/publish_site.sh` (pushes `site/` to `gh-pages`, served at https://alejandroborrego.dev/cite-or-silence/)
-- `uv run cite-or-silence bench [--ids s01,m02] [--limit N] [--provider codex|ollama]` (~1 h for all)
+- `uv run cite-or-silence bench [--ids s01,m02] [--types false_premise] [--limit N] [--provider codex|ollama] [--search question|sketch]` (~2 h for all)
+- `uv run cite-or-silence judge [--provider codex|ollama] [--judge claude] [--version v1|v2]`
